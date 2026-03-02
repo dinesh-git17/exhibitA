@@ -58,7 +58,7 @@ jobs:
             echo "has-tests=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.detect.outputs.has-apns == 'true'
         with:
           python-version: "3.13"
