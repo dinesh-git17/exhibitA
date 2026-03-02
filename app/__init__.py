@@ -3,17 +3,21 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.templating import Jinja2Templates
 
 from app.auth import AuthenticationError
 from app.config import Settings
 from app.db import connect
 from app.models import HealthResponse
 from app.routes import build_api_router
+from app.routes.admin import configure_templates
+from app.routes.admin import router as admin_router
 
 
 def _configure_logging(*, debug: bool) -> None:
@@ -76,6 +80,11 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(build_api_router())
+
+    templates_dir = Path(__file__).resolve().parent / "templates"
+    templates = Jinja2Templates(directory=str(templates_dir))
+    configure_templates(templates)
+    app.include_router(admin_router)
 
     @app.get("/health")
     async def health() -> HealthResponse:

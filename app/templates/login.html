@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Exhibit A - Login{% endblock %}
+{% block nav %}{% endblock %}
+{% block content %}
+<h1>Exhibit A - Clerk's Office</h1>
+<p>Enter your API key to access the record.</p>
+{% if error %}
+<div class="flash flash-error" role="alert">{{ error }}</div>
+{% endif %}
+<form method="post" action="/admin/login">
+  <label for="api_key">API Key</label><br>
+  <input type="password" id="api_key" name="api_key" required autofocus><br><br>
+  <button type="submit">Authenticate</button>
+</form>
+{% endblock %}
