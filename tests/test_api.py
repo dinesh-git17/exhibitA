@@ -1,5 +1,7 @@
 """Smoke tests for app-facing API endpoints per Design Doc 7.3."""
 
+# pylint: disable=redefined-outer-name,missing-class-docstring,missing-function-docstring,import-outside-toplevel
+
 import os
 import sqlite3
 from collections.abc import Iterator
