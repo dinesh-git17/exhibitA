@@ -9,6 +9,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.auth import AuthenticationError
@@ -80,6 +81,9 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(build_api_router())
+
+    static_dir = Path(__file__).resolve().parent / "static"
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     templates_dir = Path(__file__).resolve().parent / "templates"
     templates = Jinja2Templates(directory=str(templates_dir))

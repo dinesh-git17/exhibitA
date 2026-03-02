@@ -1,13 +1,14 @@
 """Admin panel routes: session auth, dashboard, content CRUD per Design Doc 9.1-9.8."""
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt
 import structlog
-from fastapi import APIRouter, Form, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Form, Query, Request, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.apns import send_push
@@ -21,6 +22,18 @@ _templates: Jinja2Templates | None = None
 
 _SESSION_COOKIE_NAME = "admin_session"
 _SESSION_DURATION_DAYS = 7
+
+_LETTER_CLASSIFICATIONS = [
+    "Sincere",
+    "Grievance",
+    "Motion to Appreciate",
+    "Emergency Filing",
+    "Brief in Support",
+    "Petition for Cuddles",
+    "Amicus Brief",
+    "Closing Statement",
+    "Addendum to Previous Affection",
+]
 
 
 def configure_templates(templates: Jinja2Templates) -> None:
@@ -93,6 +106,17 @@ async def _verify_api_key(db: Any, raw_key: str) -> bool:
             matched = True
 
     return matched
+
+
+def _render_markdown(text: str) -> str:
+    """Convert basic markdown (bold, italic, paragraphs) to HTML."""
+    if not text.strip():
+        return ""
+    text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", text)
+    paragraphs = re.split(r"\n\s*\n", text)
+    return "".join(f"<p>{p.strip()}</p>" for p in paragraphs if p.strip())
 
 
 # --- Session/Auth Routes ---
@@ -211,10 +235,134 @@ async def dashboard(request: Request) -> Response:
             "signature_count": signature_count,
             "total_signable": total_signable,
             "recent_filings": recent_filings,
+            "active": "dashboard",
             "flash": request.cookies.get("_flash"),
             "flash_level": request.cookies.get("_flash_level", "success"),
         },
     )
+
+
+# --- Content List & Forms ---
+
+
+@router.get("/content", response_model=None)
+async def content_list(request: Request) -> Response:
+    """Render grouped content list for all types."""
+    if not await _validate_session(request):
+        return _login_redirect()
+
+    db = request.app.state.db
+    cursor = await db.execute(
+        "SELECT id, type, title, body, article_number, classification, "
+        "section_order, created_at FROM content ORDER BY section_order"
+    )
+    rows = [dict(r) for r in await cursor.fetchall()]
+
+    contracts = [r for r in rows if r["type"] == ContentType.CONTRACT]
+    letters = [r for r in rows if r["type"] == ContentType.LETTER]
+    thoughts = [r for r in rows if r["type"] == ContentType.THOUGHT]
+
+    templates = _get_templates()
+    return templates.TemplateResponse(
+        request,
+        "content_list.html",
+        {
+            "contracts": contracts,
+            "letters": letters,
+            "thoughts": thoughts,
+            "active": "content",
+            "flash": request.cookies.get("_flash"),
+            "flash_level": request.cookies.get("_flash_level", "success"),
+        },
+    )
+
+
+@router.get("/content/new", response_model=None)
+async def content_new_form(
+    request: Request,
+    content_type: str = Query("contract", alias="type"),
+) -> Response:
+    """Render create form adapted to content type."""
+    if not await _validate_session(request):
+        return _login_redirect()
+
+    if content_type not in (
+        ContentType.CONTRACT,
+        ContentType.LETTER,
+        ContentType.THOUGHT,
+    ):
+        return _flash_response("/admin/content", "Invalid content type.", level="error")
+
+    db = request.app.state.db
+    cursor = await db.execute(
+        "SELECT COALESCE(MAX(section_order), 0) + 1 as next_pos "
+        "FROM content WHERE type = ?",
+        (content_type,),
+    )
+    row = await cursor.fetchone()
+    next_position = row["next_pos"] if row else 1
+
+    templates = _get_templates()
+    return templates.TemplateResponse(
+        request,
+        "content_form.html",
+        {
+            "content_type": content_type,
+            "item": None,
+            "next_position": next_position,
+            "classifications": _LETTER_CLASSIFICATIONS,
+            "preview_html": None,
+            "active": "content",
+            "flash": request.cookies.get("_flash"),
+            "flash_level": request.cookies.get("_flash_level", "success"),
+        },
+    )
+
+
+@router.get("/content/{content_id}/edit", response_model=None)
+async def content_edit_form(request: Request, content_id: str) -> Response:
+    """Render edit form pre-populated with existing content values."""
+    if not await _validate_session(request):
+        return _login_redirect()
+
+    db = request.app.state.db
+    cursor = await db.execute("SELECT * FROM content WHERE id = ?", (content_id,))
+    item = await cursor.fetchone()
+
+    if item is None:
+        return _flash_response("/admin/content", "Content not found.", level="error")
+
+    item_dict = dict(item)
+    preview_html = (
+        _render_markdown(item_dict["body"])
+        if item_dict["type"] == ContentType.LETTER and item_dict.get("body")
+        else None
+    )
+
+    templates = _get_templates()
+    return templates.TemplateResponse(
+        request,
+        "content_form.html",
+        {
+            "content_type": item_dict["type"],
+            "item": item_dict,
+            "next_position": item_dict["section_order"],
+            "classifications": _LETTER_CLASSIFICATIONS,
+            "preview_html": preview_html,
+            "active": "content",
+            "flash": request.cookies.get("_flash"),
+            "flash_level": request.cookies.get("_flash_level", "success"),
+        },
+    )
+
+
+@router.post("/content/preview", response_model=None)
+async def content_preview(request: Request, body: str = Form("")) -> Response:
+    """Return rendered markdown HTML fragment for HTMX preview swap."""
+    if not await _validate_session(request):
+        return HTMLResponse("", status_code=401)
+
+    return HTMLResponse(_render_markdown(body))
 
 
 # --- Content CRUD ---

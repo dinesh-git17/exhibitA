@@ -1,0 +1,18 @@
+<tr>
+  <td class="content-row-title">
+    {% if item.title %}
+      {{ item.title }}
+    {% else %}
+      <span class="content-row-preview">{{ item.body[:80] }}</span>
+    {% endif %}
+  </td>
+  <td class="content-row-date">{{ item.created_at[:10] if item.created_at else "" }}</td>
+  <td class="content-row-position">{{ item.section_order }}</td>
+  <td class="content-row-actions">
+    <a href="/admin/content/{{ item.id }}/edit" class="btn btn-sm">Edit</a>
+    <form class="delete-inline" method="post" action="/admin/content/{{ item.id }}/delete"
+          onsubmit="return confirm('This will remove the filing from the record. Are you sure, counselor?')">
+      <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+    </form>
+  </td>
+</tr>
