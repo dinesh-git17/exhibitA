@@ -76,20 +76,20 @@ endpoints and the backend runs with recoverable HTTPS-backed operations on the V
 
 ## Definition of Done
 
-- [ ] Every app-facing request without an `Authorization: Bearer` header returns HTTP 401 with error code
+- [x] Every app-facing request without an `Authorization: Bearer` header returns HTTP 401 with error code
   `UNAUTHORIZED`.
-- [ ] Requests with invalid Bearer keys return HTTP 401 with the standard error envelope.
-- [ ] Requests with valid Bearer keys resolve the signer identity as either `dinesh` or `carolina`.
-- [ ] `POST /signatures` returns HTTP 400 with `INVALID_SIGNER` when payload signer does not match authenticated signer.
-- [ ] Authentication checks compare keys using constant-time verification against stored key hashes.
-- [ ] `deploy/caddy/exhibita.Caddyfile` proxies `exhibita.dineshd.dev` to `127.0.0.1:8001` and keeps HTTPS enabled.
-- [ ] `deploy/systemd/exhibit-a.service` defines `WorkingDirectory=/opt/exhibit-a`, `ExecStart=/opt/exhibit-a/start.sh`,
+- [x] Requests with invalid Bearer keys return HTTP 401 with the standard error envelope.
+- [x] Requests with valid Bearer keys resolve the signer identity as either `dinesh` or `carolina`.
+- [x] `POST /signatures` returns HTTP 400 with `INVALID_SIGNER` when payload signer does not match authenticated signer.
+- [x] Authentication checks compare keys using constant-time verification against stored key hashes.
+- [x] `deploy/caddy/exhibita.Caddyfile` proxies `exhibita.dineshd.dev` to `127.0.0.1:8001` and keeps HTTPS enabled.
+- [x] `deploy/systemd/exhibit-a.service` defines `WorkingDirectory=/opt/exhibit-a`, `ExecStart=/opt/exhibit-a/start.sh`,
   `Restart=always`, and `RestartSec=5`.
-- [ ] `litestream.yml` replicates `/opt/exhibit-a/data/exhibit-a.db` WAL frames to Backblaze B2 with a replication lag
+- [x] `litestream.yml` replicates `/opt/exhibit-a/data/exhibit-a.db` WAL frames to Backblaze B2 with a replication lag
   target under 60 seconds.
-- [ ] Deployment executes repository-first: artifacts are authored and validated in this repository, then copied to VPS
+- [x] Deployment executes repository-first: artifacts are authored and validated in this repository, then copied to VPS
   paths; no direct VPS-side source coding is used.
-- [ ] Production process restart recovers API availability within 5 seconds after simulated process exit.
+- [x] Production process restart recovers API availability within 5 seconds after simulated process exit.
 
 ---
 
