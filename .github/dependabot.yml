@@ -4,8 +4,8 @@
 # Active ecosystems:
 #   github-actions -- 11 CI/CD workflows, 4 versioned action pins
 #
-# Dormant (uncomment when manifest files are committed):
-#   pip -- FastAPI backend (requires requirements.txt or pyproject.toml)
+# Active ecosystems:
+#   pip -- FastAPI backend (requirements.txt committed)
 #
 # Not supported by Dependabot:
 #   swift -- SPM dependencies must be updated manually or via Xcode
@@ -42,28 +42,28 @@ updates:
 
   # -----------------------------------------------------------------
   # Python (pip)
-  # Activate when requirements.txt or pyproject.toml is committed.
-  # Expected runtime: fastapi, uvicorn, pydantic, aioapns, jinja2,
-  #   bcrypt, structlog, python-multipart, aiofiles
-  # Expected dev: ruff, mypy, pytest, pytest-asyncio, httpx
+  # Scope: requirements.txt
+  # Runtime: fastapi, uvicorn, pydantic, aioapns, jinja2,
+  #   bcrypt, structlog, python-multipart
+  # Dev: ruff, mypy, pytest, pytest-asyncio, httpx
   # -----------------------------------------------------------------
-  # - package-ecosystem: "pip"
-  #   directory: "/"
-  #   schedule:
-  #     interval: "weekly"
-  #     day: "monday"
-  #   open-pull-requests-limit: 5
-  #   groups:
-  #     python-minor-patch:
-  #       patterns:
-  #         - "*"
-  #       update-types:
-  #         - "minor"
-  #         - "patch"
-  #   commit-message:
-  #     prefix: "chore"
-  #     include: "scope"
-  #   labels:
-  #     - "dependencies"
-  #   reviewers:
-  #     - "dinesh-git17"
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      python-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+    reviewers:
+      - "dinesh-git17"
