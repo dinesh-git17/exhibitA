@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.auth import AuthenticationError
 from app.config import Settings
 from app.db import connect
 from app.models import HealthResponse
@@ -50,6 +51,15 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="Exhibit A", lifespan=lifespan)
     app.state.settings = settings
+
+    @app.exception_handler(AuthenticationError)
+    async def auth_error_handler(
+        _request: Request, exc: AuthenticationError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": {"code": exc.code, "message": exc.message}},
+        )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(

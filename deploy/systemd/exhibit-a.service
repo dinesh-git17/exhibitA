@@ -1,0 +1,13 @@
+[Unit]
+Description=Exhibit A Backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/exhibit-a
+ExecStart=/opt/exhibit-a/start.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
