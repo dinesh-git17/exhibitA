@@ -1,0 +1,6 @@
+// Release.xcconfig -- Exhibit A
+// Copy to Release.xcconfig and fill in real values. Release.xcconfig is gitignored.
+
+SIGNER_IDENTITY = dinesh
+API_KEY = your-release-api-key
+API_BASE_URL = https:/$()/exhibita.dineshd.dev

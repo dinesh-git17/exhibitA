@@ -1,0 +1,6 @@
+// Debug.xcconfig -- Exhibit A
+// Copy to Debug.xcconfig and fill in real values. Debug.xcconfig is gitignored.
+
+SIGNER_IDENTITY = dinesh
+API_KEY = your-debug-api-key
+API_BASE_URL = https:/$()/exhibita.dineshd.dev
