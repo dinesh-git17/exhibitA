@@ -111,7 +111,7 @@ jobs:
           swift --version
 
       - name: Cache SPM dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/Library/Caches/org.swift.swiftpm
@@ -182,7 +182,7 @@ jobs:
           sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
 
       - name: Cache SPM dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/Library/Caches/org.swift.swiftpm

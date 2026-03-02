@@ -111,7 +111,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: .mypy_cache
           key: ${{ runner.os }}-mypy-${{ hashFiles('app/**/*.py') }}
