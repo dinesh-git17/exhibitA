@@ -1,0 +1,33 @@
+line-length = 88
+target-version = "py313"
+
+[lint]
+select = [
+  "F",    # pyflakes
+  "E",    # pycodestyle errors
+  "W",    # pycodestyle warnings
+  "I",    # isort
+  "UP",   # pyupgrade
+  "B",    # flake8-bugbear
+  "SIM",  # flake8-simplify
+  "C4",   # flake8-comprehensions
+  "PTH",  # flake8-use-pathlib
+  "S",    # flake8-bandit (security)
+  "A",    # flake8-builtins
+  "EM",   # flake8-errmsg
+  "T20",  # flake8-print
+  "RET",  # flake8-return
+  "PERF", # perflint
+  "RUF",  # ruff-specific
+]
+
+[lint.per-file-ignores]
+"scripts/*.py" = ["T20"]
+".claude/skills/*/scripts/*.py" = ["E501", "T20", "SIM102", "SIM110", "PERF401", "B007", "S104", "S314", "S603", "UP038"]
+
+[lint.isort]
+known-first-party = ["app"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

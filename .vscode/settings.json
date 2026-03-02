@@ -122,6 +122,7 @@
   "[toml]": {
     "editor.tabSize": 2
   },
+  "evenBetterToml.schema.enabled": false,
   // ─────────────────────────────────────────────────
   // Shell Scripts
   // ─────────────────────────────────────────────────
@@ -307,5 +308,6 @@
   // ─────────────────────────────────────────────────
   // Telemetry
   // ─────────────────────────────────────────────────
-  "telemetry.telemetryLevel": "off"
+  "telemetry.telemetryLevel": "off",
+  "python-envs.defaultEnvManager": "ms-python.python:venv"
 }
