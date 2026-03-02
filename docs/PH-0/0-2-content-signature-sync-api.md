@@ -72,21 +72,21 @@ signatures, and register for push delivery using stable response contracts.
 
 ## Definition of Done
 
-- [ ] `GET /content` returns HTTP 200 with `{"items": [...]}` ordered by `type` and `section_order`.
-- [ ] `GET /content?type=contract` returns only `contract` records and preserves phase-defined ordering.
-- [ ] `GET /content?since=<ISO8601>` returns only records with `updated_at` strictly newer than the provided timestamp.
-- [ ] `GET /content/{id}` returns HTTP 200 for existing IDs and HTTP 404 with the standard error envelope for missing
+- [x] `GET /content` returns HTTP 200 with `{"items": [...]}` ordered by `type` and `section_order`.
+- [x] `GET /content?type=contract` returns only `contract` records and preserves phase-defined ordering.
+- [x] `GET /content?since=<ISO8601>` returns only records with `updated_at` strictly newer than the provided timestamp.
+- [x] `GET /content/{id}` returns HTTP 200 for existing IDs and HTTP 404 with the standard error envelope for missing
   IDs.
-- [ ] `GET /content/{id}/signatures` returns signature metadata for that contract and no unrelated rows.
-- [ ] `GET /signatures/{id}/image` returns HTTP 200 with `Content-Type: image/png` for valid IDs.
-- [ ] `POST /signatures` accepts multipart PNG up to 1 MB and returns HTTP 201 with `id`, `content_id`, `signer`, and
+- [x] `GET /content/{id}/signatures` returns signature metadata for that contract and no unrelated rows.
+- [x] `GET /signatures/{id}/image` returns HTTP 200 with `Content-Type: image/png` for valid IDs.
+- [x] `POST /signatures` accepts multipart PNG up to 1 MB and returns HTTP 201 with `id`, `content_id`, `signer`, and
   `signed_at`.
-- [ ] Duplicate signature submissions for the same `(content_id, signer)` return HTTP 409 with error code
+- [x] Duplicate signature submissions for the same `(content_id, signer)` return HTTP 409 with error code
   `ALREADY_SIGNED`.
-- [ ] `GET /sync?since=<ISO8601>` returns `{"changes": [...]}` ordered by `occurred_at` ascending.
-- [ ] `POST /device-tokens` persists the token with signer identity and returns HTTP 201 on successful registration.
-- [ ] Every non-2xx endpoint response uses the exact error envelope format from Design Doc 7.3.2.
-- [ ] Endpoint code is committed in-repo and promoted to VPS only through repository-first deployment flow (`scp` after
+- [x] `GET /sync?since=<ISO8601>` returns `{"changes": [...]}` ordered by `occurred_at` ascending.
+- [x] `POST /device-tokens` persists the token with signer identity and returns HTTP 201 on successful registration.
+- [x] Every non-2xx endpoint response uses the exact error envelope format from Design Doc 7.3.2.
+- [x] Endpoint code is committed in-repo and promoted to VPS only through repository-first deployment flow (`scp` after
   local validation).
 
 ---

@@ -124,15 +124,15 @@ repository code and is deployable to the VPS without direct VPS-side source auth
 
 ## Definition of Done
 
-- [ ] `python -m app` starts the API process bound to `127.0.0.1:8001` from repository code.
-- [ ] `GET /health` returns HTTP 200 with body `{"status":"ok"}` after service startup.
-- [ ] Database initialization creates all six tables and all required indexes exactly matching Design Doc 7.2.
-- [ ] SQLite runs in WAL mode and persists the database file at the configured path.
-- [ ] Runtime settings resolve from environment variables through `pydantic-settings` without hardcoded secrets.
-- [ ] `ruff format --check .`, `ruff check .`, and `mypy --strict .` pass after scaffold creation.
-- [ ] `scripts/protocol-zero.sh` exits 0 on a clean repository snapshot.
-- [ ] `scripts/check-em-dashes.sh` exits 0 on a clean repository snapshot.
-- [ ] Deployment artifact set is generated in-repo and is ready for `scp` to `/opt/exhibit-a/` without direct VPS code
+- [x] `python -m app` starts the API process bound to `127.0.0.1:8001` from repository code.
+- [x] `GET /health` returns HTTP 200 with body `{"status":"ok"}` after service startup.
+- [x] Database initialization creates all six tables and all required indexes exactly matching Design Doc 7.2.
+- [x] SQLite runs in WAL mode and persists the database file at the configured path.
+- [x] Runtime settings resolve from environment variables through `pydantic-settings` without hardcoded secrets.
+- [x] `ruff format --check .`, `ruff check .`, and `mypy --strict .` pass after scaffold creation.
+- [x] `scripts/protocol-zero.sh` exits 0 on a clean repository snapshot.
+- [x] `scripts/check-em-dashes.sh` exits 0 on a clean repository snapshot.
+- [x] Deployment artifact set is generated in-repo and is ready for `scp` to `/opt/exhibit-a/` without direct VPS code
   edits.
 
 ---
