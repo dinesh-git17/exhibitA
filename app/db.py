@@ -1,5 +1,6 @@
 """SQLite database lifecycle, WAL enforcement, and schema bootstrap."""
 
+import sqlite3
 from pathlib import Path
 
 import aiosqlite
@@ -69,6 +70,7 @@ async def connect(db_path: Path) -> aiosqlite.Connection:
     """Open a connection, enforce WAL mode, and bootstrap schema and indexes."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = await aiosqlite.connect(str(db_path))
+    connection.row_factory = sqlite3.Row
     await connection.execute("PRAGMA journal_mode=WAL")
     await connection.execute("PRAGMA foreign_keys=ON")
     await connection.executescript(_SCHEMA_SQL)
