@@ -19,7 +19,7 @@
   "editor.detectIndentation": false,
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": true,
-  "editor.minimap.enabled": false,
+  "editor.minimap.enabled": true,
   "editor.stickyScroll.enabled": true,
   // ─────────────────────────────────────────────────
   // File Associations
