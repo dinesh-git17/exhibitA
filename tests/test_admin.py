@@ -420,6 +420,244 @@ class TestAdminContentDelete:
         assert response.status_code == 303
 
 
+# --- Content List & Form Tests ---
+
+
+class TestAdminContentList:
+    def test_content_list_requires_auth(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = admin_client
+        response = client.get("/admin/content", follow_redirects=False)
+        assert response.status_code == 303
+        assert "/admin/login" in response.headers["location"]
+
+    def test_content_list_renders_grouped_sections(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = admin_client
+        _seed_content(db_path, "c1", "contract", 1, title="Test Contract")
+        _seed_content(db_path, "l1", "letter", 1, title="Test Letter")
+        _seed_content(db_path, "t1", "thought", 1, title="", body="Test thought body")
+        _login(client)
+
+        response = client.get("/admin/content")
+        assert response.status_code == 200
+        html = response.text
+        assert "Contracts" in html
+        assert "Letters" in html
+        assert "Sealed Thoughts" in html
+        assert "Test Contract" in html
+        assert "Test Letter" in html
+        assert "Test thought body" in html
+
+    def test_content_list_renders_edit_and_delete_actions(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = admin_client
+        _seed_content(db_path, "c1", "contract", 1, title="Contract One")
+        _login(client)
+
+        response = client.get("/admin/content")
+        html = response.text
+        assert "/admin/content/c1/edit" in html
+        assert "/admin/content/c1/delete" in html
+
+    def test_content_list_uses_content_row_partial(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = admin_client
+        _seed_content(db_path, "c1", "contract", 1, title="Row Item")
+        _login(client)
+
+        response = client.get("/admin/content")
+        html = response.text
+        assert "Row Item" in html
+        assert "Edit" in html
+        assert "Delete" in html
+
+
+class TestAdminContentForm:
+    def test_contract_form_renders_required_fields(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = admin_client
+        _login(client)
+
+        response = client.get("/admin/content/new?type=contract")
+        assert response.status_code == 200
+        html = response.text
+        assert 'name="article_number"' in html
+        assert 'name="title"' in html
+        assert 'name="body"' in html
+        assert 'name="requires_signature"' in html
+        assert 'name="section_order"' in html
+
+    def test_letter_form_renders_required_fields(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = admin_client
+        _login(client)
+
+        response = client.get("/admin/content/new?type=letter")
+        assert response.status_code == 200
+        html = response.text
+        assert 'name="title"' in html
+        assert 'name="subtitle"' in html
+        assert 'name="classification"' in html
+        assert 'name="body"' in html
+        assert 'name="section_order"' in html
+
+    def test_letter_form_has_nine_classifications(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = admin_client
+        _login(client)
+
+        response = client.get("/admin/content/new?type=letter")
+        html = response.text
+        for cls in [
+            "Sincere",
+            "Grievance",
+            "Motion to Appreciate",
+            "Emergency Filing",
+            "Brief in Support",
+            "Petition for Cuddles",
+            "Amicus Brief",
+            "Closing Statement",
+            "Addendum to Previous Affection",
+        ]:
+            assert cls in html
+
+    def test_thought_form_renders_minimal_fields(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = admin_client
+        _login(client)
+
+        response = client.get("/admin/content/new?type=thought")
+        assert response.status_code == 200
+        html = response.text
+        assert 'name="body"' in html
+        assert 'name="section_order"' in html
+        assert "char-count" in html
+        assert 'name="title"' not in html
+
+    def test_edit_form_prepopulates_values(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = admin_client
+        _seed_content(
+            db_path,
+            "c1",
+            "contract",
+            1,
+            title="Existing Title",
+            body="Existing body",
+            article_number="Article I",
+        )
+        _login(client)
+
+        response = client.get("/admin/content/c1/edit")
+        assert response.status_code == 200
+        html = response.text
+        assert "Existing Title" in html
+        assert "Existing body" in html
+        assert "Article I" in html
+
+    def test_edit_form_nonexistent_redirects(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = admin_client
+        _login(client)
+
+        response = client.get("/admin/content/nonexistent/edit", follow_redirects=False)
+        assert response.status_code == 303
+
+    def test_delete_confirmation_text_present(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = admin_client
+        _seed_content(db_path, "c1", "contract", 1, title="Delete Me")
+        _login(client)
+
+        response = client.get("/admin/content/c1/edit")
+        html = response.text
+        assert "Delete Filing" in html
+        assert "Are you sure, counselor?" in html
+
+    def test_form_requires_auth(self, admin_client: tuple[TestClient, Path]) -> None:
+        client, _ = admin_client
+        response = client.get(
+            "/admin/content/new?type=contract", follow_redirects=False
+        )
+        assert response.status_code == 303
+        assert "/admin/login" in response.headers["location"]
+
+    def test_next_position_prefilled(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = admin_client
+        _seed_content(db_path, "c1", "contract", 3)
+        _login(client)
+
+        response = client.get("/admin/content/new?type=contract")
+        html = response.text
+        assert 'value="4"' in html
+
+
+class TestAdminContentPreview:
+    def test_preview_renders_markdown(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = admin_client
+        _login(client)
+
+        response = client.post(
+            "/admin/content/preview",
+            data={"body": "**bold** and *italic*"},
+        )
+        assert response.status_code == 200
+        html = response.text
+        assert "<strong>bold</strong>" in html
+        assert "<em>italic</em>" in html
+
+    def test_preview_renders_paragraphs(
+        self, admin_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = admin_client
+        _login(client)
+
+        response = client.post(
+            "/admin/content/preview",
+            data={"body": "First paragraph.\n\nSecond paragraph."},
+        )
+        assert response.status_code == 200
+        html = response.text
+        assert "<p>First paragraph.</p>" in html
+        assert "<p>Second paragraph.</p>" in html
+
+    def test_preview_requires_auth(self, admin_client: tuple[TestClient, Path]) -> None:
+        client, _ = admin_client
+        response = client.post(
+            "/admin/content/preview",
+            data={"body": "test"},
+        )
+        assert response.status_code == 401
+
+    def test_preview_escapes_html(self, admin_client: tuple[TestClient, Path]) -> None:
+        client, _ = admin_client
+        _login(client)
+
+        response = client.post(
+            "/admin/content/preview",
+            data={"body": "<script>alert('xss')</script>"},
+        )
+        assert response.status_code == 200
+        assert "<script>" not in response.text
+        assert "&lt;script&gt;" in response.text
+
+
 # --- APNS Copy Tests ---
 
 

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Exhibit A - Content Registry{% endblock %}
+{% block content %}
+<h1>Content Registry</h1>
+
+<section>
+  <h2>Contracts</h2>
+  {% if contracts %}
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Filed</th>
+        <th>Position</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in contracts %}
+        {% include "components/content_row.html" %}
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-state">No contracts on file.</p>
+  {% endif %}
+  <a href="/admin/content/new?type=contract" class="btn btn-sm">+ File New Contract</a>
+</section>
+
+<section>
+  <h2>Letters</h2>
+  {% if letters %}
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Filed</th>
+        <th>Position</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in letters %}
+        {% include "components/content_row.html" %}
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-state">No letters filed.</p>
+  {% endif %}
+  <a href="/admin/content/new?type=letter" class="btn btn-sm">+ File New Letter</a>
+</section>
+
+<section>
+  <h2>Sealed Thoughts</h2>
+  {% if thoughts %}
+  <table>
+    <thead>
+      <tr>
+        <th>Preview</th>
+        <th>Filed</th>
+        <th>Position</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in thoughts %}
+        {% include "components/content_row.html" %}
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-state">No sealed thoughts on record.</p>
+  {% endif %}
+  <a href="/admin/content/new?type=thought" class="btn btn-sm">+ File New Thought</a>
+</section>
+{% endblock %}

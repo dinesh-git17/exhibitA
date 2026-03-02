@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Exhibit A - {% if item %}Edit{% else %}New{% endif %} {{ content_type | capitalize }}{% endblock %}
+{% block content %}
+<h1>{% if item %}Edit {{ content_type | capitalize }}{% else %}File New {{ content_type | capitalize }}{% endif %}</h1>
+
+<form method="post"
+      action="{% if item %}/admin/content/{{ item.id }}/update{% else %}/admin/content/create{% endif %}">
+  {% if not item %}
+  <input type="hidden" name="content_type" value="{{ content_type }}">
+  {% endif %}
+
+  {% if content_type == "contract" %}
+  {# --- Contract fields --- #}
+  <div class="form-group">
+    <label for="article_number">Article Number</label>
+    <input type="text" id="article_number" name="article_number"
+           value="{{ item.article_number if item and item.article_number else '' }}"
+           placeholder="e.g. Article IX" required>
+  </div>
+
+  <div class="form-group">
+    <label for="title">Title</label>
+    <input type="text" id="title" name="title"
+           value="{{ item.title if item and item.title else '' }}"
+           placeholder="e.g. The Bed Temperature Accord" required>
+  </div>
+
+  <div class="form-group">
+    <label for="body">Body</label>
+    <textarea id="body" name="body" required>{{ item.body if item and item.body else '' }}</textarea>
+  </div>
+
+  <div class="form-group">
+    <div class="checkbox-row">
+      <input type="checkbox" id="requires_signature" name="requires_signature" value="true"
+             {% if not item or item.requires_signature %}checked{% endif %}>
+      <label for="requires_signature" style="display:inline; text-transform:none; font-size:0.9rem;">Requires Signature</label>
+    </div>
+  </div>
+
+  {% elif content_type == "letter" %}
+  {# --- Letter fields --- #}
+  <div class="form-group">
+    <label for="title">Title</label>
+    <input type="text" id="title" name="title"
+           value="{{ item.title if item and item.title else '' }}"
+           placeholder="e.g. On the Matter of Missing You" required>
+  </div>
+
+  <div class="form-group">
+    <label for="subtitle">Subtitle</label>
+    <input type="text" id="subtitle" name="subtitle"
+           value="{{ item.subtitle if item and item.subtitle else '' }}"
+           placeholder="Secondary line (optional)">
+  </div>
+
+  <div class="form-group">
+    <label for="classification">Classification</label>
+    <select id="classification" name="classification" required>
+      <option value="">-- Select classification --</option>
+      {% for cls in classifications %}
+      <option value="{{ cls }}"{% if item and item.classification == cls %} selected{% endif %}>{{ cls }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="body">Body (Markdown)</label>
+    <textarea id="body" name="body" required
+              hx-post="/admin/content/preview"
+              hx-trigger="keyup changed delay:500ms"
+              hx-target="#letter-preview">{{ item.body if item and item.body else '' }}</textarea>
+    <div class="hint">Supports **bold**, *italic*, and paragraph breaks.</div>
+  </div>
+
+  <div class="preview-container">
+    <div class="preview-label">Preview</div>
+    <div id="letter-preview" class="preview-area">
+      {% if preview_html %}{{ preview_html | safe }}{% endif %}
+    </div>
+  </div>
+
+  {% elif content_type == "thought" %}
+  {# --- Thought fields --- #}
+  <div class="form-group">
+    <label for="body">Sealed Thought</label>
+    <textarea id="body" name="body" required style="min-height:100px;"
+              oninput="document.getElementById('char-count').textContent=this.value.length">{{ item.body if item and item.body else '' }}</textarea>
+    <div class="char-count"><span id="char-count">{{ (item.body | length) if item and item.body else 0 }}</span> characters</div>
+  </div>
+
+  {% endif %}
+
+  <div class="form-group">
+    <label for="section_order">Position</label>
+    <input type="number" id="section_order" name="section_order"
+           value="{{ item.section_order if item else next_position }}" min="1" required>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">
+      {% if item %}Update Filing{% else %}File to Record{% endif %}
+    </button>
+    <a href="/admin/content" class="btn">Cancel</a>
+  </div>
+</form>
+
+{% if item %}
+<form class="delete-inline" method="post" action="/admin/content/{{ item.id }}/delete"
+      onsubmit="return confirm('This will remove the filing from the record. Are you sure, counselor?')"
+      style="margin-top:-2.75rem; text-align:right;">
+  <button type="submit" class="btn btn-danger">Delete Filing</button>
+</form>
+{% endif %}
+{% endblock %}
