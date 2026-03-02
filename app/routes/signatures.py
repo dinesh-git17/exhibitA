@@ -4,9 +4,10 @@ import sqlite3
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
 
+from app.auth import enforce_signer_match, require_auth
 from app.routes import error_response
 
 SIGNATURE_MAX_BYTES = 1_048_576  # 1 MB
@@ -33,6 +34,7 @@ async def get_signature_image(
 @router.post("/signatures", status_code=201)
 async def create_signature(
     request: Request,
+    authenticated_signer: Annotated[str, Depends(require_auth)],
     content_id: Annotated[str, Form()],
     signer: Annotated[str, Form()],
     image: Annotated[UploadFile, File()],
@@ -41,6 +43,8 @@ async def create_signature(
     if signer not in ("dinesh", "carolina"):
         msg = "Invalid signer value."
         return error_response(422, "VALIDATION_ERROR", msg)
+
+    enforce_signer_match(authenticated_signer, signer)
 
     image_data = await image.read()
     if len(image_data) > SIGNATURE_MAX_BYTES:
