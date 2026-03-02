@@ -1,0 +1,60 @@
+# SwiftFormat Configuration -- Exhibit A
+# Swift 6.2 | iOS 26+
+
+--swiftversion 6.2
+
+# Indentation
+--indent 4
+--tabwidth 4
+--smarttabs enabled
+--indentcase false
+--ifdef indent
+
+# Wrapping
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapconditions after-first
+--wrapreturntype if-multiline
+--wrapeffects if-multiline
+--closingparen balanced
+
+# Spacing
+--operatorfunc spaced
+--ranges spaced
+--trimwhitespace always
+--emptybraces no-space
+
+# Braces
+--allman false
+--elseposition same-line
+--guardelse next-line
+
+# Redundancy
+--self remove
+--redundanttype inferred
+--stripunusedargs closure-only
+
+# Organization
+--importgrouping testable-bottom
+--organizetypes class,struct,enum,protocol,extension
+
+# Header
+--header strip
+
+# Types
+--semicolons never
+
+# Misc
+--commas always
+--decimalgrouping 3,4
+--exponentcase lowercase
+--hexgrouping 4,8
+--hexliteralcase uppercase
+--binarygrouping 4,8
+--octalgrouping 4,8
+--modifierorder acl,override,setteracl,dynamic,mutating,lazy,final,required,convenience,typeMethods,owned
+
+# Exclusions
+--exclude DerivedData,.build,.swiftpm,Packages

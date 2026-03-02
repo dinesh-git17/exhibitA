@@ -1,0 +1,232 @@
+# ios-build-and-test.yml -- iOS project build, lint, and test
+#
+# Surfaces: ExhibitA/ (Xcode project), ExhibitATests/
+# Purpose: Builds the iOS app targeting iOS 26+ with Swift 6.2 / Xcode 17,
+#          runs SwiftLint, SwiftFormat checks, and executes Swift Testing
+#          test suite. Uses macOS 15 ARM64 runner.
+# Guards: Skips entirely if ExhibitA/ directory or .xcodeproj does not exist
+# Reference: Design doc S8 (Swift app structure), S10.9 (tooling)
+# Cost note: macOS runners bill at 10x Linux rate -- path filters prevent
+#            unnecessary runs when only backend files change
+
+name: iOS Build & Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ExhibitA/**"
+      - "ExhibitATests/**"
+      - "Package.swift"
+      - ".swiftlint.yml"
+      - ".swiftformat"
+      - ".github/workflows/ios-build-and-test.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ExhibitA/**"
+      - "ExhibitATests/**"
+      - "Package.swift"
+      - ".swiftlint.yml"
+      - ".swiftformat"
+      - ".github/workflows/ios-build-and-test.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  detect:
+    name: Detect iOS surface
+    runs-on: ubuntu-latest
+    outputs:
+      has-project: ${{ steps.check.outputs.has-project }}
+      has-tests: ${{ steps.check.outputs.has-tests }}
+      has-swiftlint: ${{ steps.check.outputs.has-swiftlint }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            ExhibitA
+            ExhibitATests
+            .swiftlint.yml
+            .swiftformat
+          sparse-checkout-cone-mode: false
+
+      - name: Check iOS project
+        id: check
+        run: |
+          if [ -d "ExhibitA" ] && [ -n "$(find ExhibitA -name '*.xcodeproj' -o -name '*.xcworkspace' -o -name 'Package.swift' -print -quit 2>/dev/null)" ]; then
+            echo "has-project=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-project=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ExhibitA/ directory or Xcode project not found -- skipping iOS build"
+          fi
+          if [ -d "ExhibitATests" ] && [ -n "$(find ExhibitATests -name '*.swift' -print -quit 2>/dev/null)" ]; then
+            echo "has-tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-tests=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f ".swiftlint.yml" ]; then
+            echo "has-swiftlint=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-swiftlint=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  lint:
+    name: SwiftLint
+    needs: detect
+    if: needs.detect.outputs.has-project == 'true' && needs.detect.outputs.has-swiftlint == 'true'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        run: swiftlint lint --strict --reporter github-actions-logging ExhibitA/
+
+  build:
+    name: Build (iOS 26)
+    needs: detect
+    if: needs.detect.outputs.has-project == 'true'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          # Select the latest Xcode 17.x for Swift 6.2 / iOS 26 SDK
+          XCODE_PATH=$(find /Applications -maxdepth 1 -name 'Xcode_17*' -print -quit 2>/dev/null || true)
+          if [ -z "$XCODE_PATH" ]; then
+            XCODE_PATH=$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)
+            echo "::warning::Xcode 17.x not found, using latest available: $XCODE_PATH"
+          fi
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+          swift --version
+
+      - name: Cache SPM dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            .build
+          key: ${{ runner.os }}-${{ runner.arch }}-spm-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-spm-
+
+      - name: Resolve packages
+        run: |
+          SCHEME=$(xcodebuild -list -json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('project',d.get('workspace',{})).get('schemes',['ExhibitA'])[0])" 2>/dev/null || echo "ExhibitA")
+          echo "SCHEME=$SCHEME" >> "$GITHUB_ENV"
+          xcodebuild -resolvePackageDependencies \
+            -scheme "$SCHEME" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation 2>&1 | tail -5
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          # Detect available iOS 26 simulator runtime
+          DEST=$(xcrun simctl list runtimes -j 2>/dev/null | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for rt in data.get('runtimes', []):
+              if 'iOS' in rt.get('name', '') and rt.get('isAvailable', False):
+                  ver = rt.get('version', '')
+                  if ver.startswith('26') or ver.startswith('19'):
+                      print(f\"platform=iOS Simulator,name=iPhone 16,OS={ver}\")
+                      sys.exit(0)
+          # Fallback to latest available
+          for rt in reversed(data.get('runtimes', [])):
+              if 'iOS' in rt.get('name', '') and rt.get('isAvailable', False):
+                  print(f\"platform=iOS Simulator,name=iPhone 16,OS={rt['version']}\")
+                  sys.exit(0)
+          print('platform=iOS Simulator,name=iPhone 16')
+          " 2>/dev/null || echo "platform=iOS Simulator,name=iPhone 16")
+
+          echo "Build destination: $DEST"
+          xcodebuild build \
+            -scheme "$SCHEME" \
+            -destination "$DEST" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions 2>/dev/null || \
+          xcodebuild build \
+            -scheme "$SCHEME" \
+            -destination "$DEST" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO
+
+  test:
+    name: Test
+    needs: [detect, build]
+    if: needs.detect.outputs.has-tests == 'true'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          XCODE_PATH=$(find /Applications -maxdepth 1 -name 'Xcode_17*' -print -quit 2>/dev/null || true)
+          if [ -z "$XCODE_PATH" ]; then
+            XCODE_PATH=$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)
+          fi
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+
+      - name: Cache SPM dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            .build
+          key: ${{ runner.os }}-${{ runner.arch }}-spm-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-spm-
+
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          SCHEME=$(xcodebuild -list -json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('project',d.get('workspace',{})).get('schemes',['ExhibitA'])[0])" 2>/dev/null || echo "ExhibitA")
+
+          DEST=$(xcrun simctl list runtimes -j 2>/dev/null | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for rt in reversed(data.get('runtimes', [])):
+              if 'iOS' in rt.get('name', '') and rt.get('isAvailable', False):
+                  print(f\"platform=iOS Simulator,name=iPhone 16,OS={rt['version']}\")
+                  sys.exit(0)
+          print('platform=iOS Simulator,name=iPhone 16')
+          " 2>/dev/null || echo "platform=iOS Simulator,name=iPhone 16")
+
+          xcodebuild test \
+            -scheme "$SCHEME" \
+            -destination "$DEST" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions 2>/dev/null || \
+          xcodebuild test \
+            -scheme "$SCHEME" \
+            -destination "$DEST" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults.xcresult
+          retention-days: 14
+          if-no-files-found: ignore

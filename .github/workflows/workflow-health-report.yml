@@ -1,0 +1,253 @@
+# workflow-health-report.yml -- CI health dashboard posted as a PR comment
+#
+# Collects the status of every workflow run triggered for a pull request
+# and posts (or updates) a single structured markdown table on the PR.
+# The report refreshes each time a tracked workflow completes.
+#
+# Detection is dynamic: the GitHub API is queried at runtime for all
+# workflow runs matching the PR head SHA. The trigger list below is a
+# platform constraint (workflow_run requires explicit names) and controls
+# only WHEN the report refreshes, not WHAT it reports.
+#
+# Maintenance: when a PR-triggered workflow is added or renamed, update
+# the trigger list. Stale entries are harmless (they simply never fire).
+
+name: Workflow Health Report
+
+on:
+  workflow_run:
+    workflows:
+      - "Admin Smoke"
+      - "API Sync Contract"
+      - "Backend Quality"
+      - "Content Validation"
+      - "DB Schema Check"
+      - "Full Stack Smoke"
+      - "iOS Assets & Theme Check"
+      - "iOS Build & Test"
+      - "PR Governance"
+      - "Push Mock Integration"
+    types:
+      - completed
+
+permissions:
+  actions: read
+  pull-requests: write
+
+concurrency:
+  group: health-report-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: Post CI health report
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event.workflow_run.event == 'pull_request'
+
+    steps:
+      - name: Resolve pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            PR_NUMBER=$(gh api "repos/${REPO}/commits/${HEAD_SHA}/pulls" \
+              --jq '.[0].number // empty' 2>/dev/null || true)
+          fi
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::notice::No pull request found for ${HEAD_SHA}. Skipping report."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${HEAD_SHA:0:7}" >> "$GITHUB_OUTPUT"
+
+      - name: Collect runs and post report
+        if: steps.pr.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ steps.pr.outputs.sha }}
+          SHORT_SHA: ${{ steps.pr.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+
+          SELF_NAME="Workflow Health Report"
+          MARKER="<!-- ci-health-report -->"
+          NL=$'\n'
+
+          # ----------------------------------------------------------------
+          # Fetch data
+          # ----------------------------------------------------------------
+
+          RUNS_JSON=$(gh api "repos/${REPO}/actions/runs?head_sha=${HEAD_SHA}&per_page=100")
+          WORKFLOWS_JSON=$(gh api "repos/${REPO}/actions/workflows?per_page=100")
+
+          # Latest run per workflow, excluding this meta-workflow
+          LATEST=$(echo "$RUNS_JSON" | jq -c --arg self "$SELF_NAME" \
+            '[.workflow_runs[] | select(.name != $self)]
+            | group_by(.name)
+            | map(sort_by(.created_at) | last)
+            | sort_by(.name)')
+
+          # All active workflow names (for not-triggered detection)
+          mapfile -t ALL_NAMES < <(echo "$WORKFLOWS_JSON" | jq -r --arg self "$SELF_NAME" \
+            '[.workflows[] | select(.state == "active" and .name != $self) | .name]
+            | sort | .[]')
+
+          # Names that produced runs for this SHA
+          mapfile -t RAN_NAMES < <(echo "$LATEST" | jq -r '.[].name')
+
+          # ----------------------------------------------------------------
+          # Build table rows
+          # ----------------------------------------------------------------
+
+          TABLE_ROWS=""
+          PASS=0
+          FAIL=0
+          OTHER=0
+
+          while IFS= read -r row; do
+            [ -z "$row" ] && continue
+
+            NAME=$(echo "$row" | jq -r '.name')
+            STATUS=$(echo "$row" | jq -r '.status')
+            CONCLUSION=$(echo "$row" | jq -r '.conclusion // ""')
+            RUN_ID=$(echo "$row" | jq -r '.id')
+            URL=$(echo "$row" | jq -r '.html_url')
+            CREATED=$(echo "$row" | jq -r '.created_at')
+            UPDATED=$(echo "$row" | jq -r '.updated_at')
+
+            # Duration (completed runs only)
+            DURATION="--"
+            if [ "$STATUS" = "completed" ]; then
+              T0=$(date -d "$CREATED" +%s 2>/dev/null || echo 0)
+              T1=$(date -d "$UPDATED" +%s 2>/dev/null || echo 0)
+              if [ "$T0" -gt 0 ] && [ "$T1" -gt "$T0" ]; then
+                ELAPSED=$((T1 - T0))
+                DURATION="$((ELAPSED / 60))m $((ELAPSED % 60))s"
+              fi
+            fi
+
+            # Status badge and notes
+            NOTES="--"
+            case "$STATUS" in
+              completed)
+                case "$CONCLUSION" in
+                  success)
+                    BADGE=":white_check_mark: success"
+                    PASS=$((PASS + 1))
+                    ;;
+                  failure)
+                    BADGE=":x: failed"
+                    FAIL=$((FAIL + 1))
+                    JOBS=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" \
+                      --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' \
+                      2>/dev/null || echo "")
+                    NOTES="${JOBS:-See run details}"
+                    ;;
+                  cancelled)
+                    BADGE=":no_entry_sign: cancelled"
+                    NOTES="Cancelled"
+                    OTHER=$((OTHER + 1))
+                    ;;
+                  skipped)
+                    BADGE=":next_track_button: skipped"
+                    NOTES="Conditions not met"
+                    OTHER=$((OTHER + 1))
+                    ;;
+                  *)
+                    BADGE=":grey_question: ${CONCLUSION}"
+                    OTHER=$((OTHER + 1))
+                    ;;
+                esac
+                ;;
+              in_progress)
+                BADGE=":hourglass_flowing_sand: running"
+                NOTES="In progress"
+                OTHER=$((OTHER + 1))
+                ;;
+              queued)
+                BADGE=":clock1: queued"
+                NOTES="Waiting for runner"
+                OTHER=$((OTHER + 1))
+                ;;
+              *)
+                BADGE=":grey_question: ${STATUS}"
+                OTHER=$((OTHER + 1))
+                ;;
+            esac
+
+            TABLE_ROWS+="| [${NAME}](${URL}) | ${BADGE} | ${NOTES} | ${DURATION} |${NL}"
+          done < <(echo "$LATEST" | jq -c '.[]')
+
+          # ----------------------------------------------------------------
+          # Detect not-triggered workflows
+          # ----------------------------------------------------------------
+
+          NOT_TRIGGERED=""
+          for wf in "${ALL_NAMES[@]}"; do
+            [ -z "$wf" ] && continue
+            FOUND=false
+            for ran in "${RAN_NAMES[@]}"; do
+              if [ "$wf" = "$ran" ]; then
+                FOUND=true
+                break
+              fi
+            done
+            if [ "$FOUND" = false ]; then
+              [ -n "$NOT_TRIGGERED" ] && NOT_TRIGGERED+=", "
+              NOT_TRIGGERED+="$wf"
+            fi
+          done
+
+          # ----------------------------------------------------------------
+          # Assemble report
+          # ----------------------------------------------------------------
+
+          NOW=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          BODY="${MARKER}${NL}"
+          BODY+="## CI Health Report${NL}${NL}"
+          BODY+="| Workflow | Status | Notes | Additional Context |${NL}"
+          BODY+="|----------|--------|-------|--------------------|${NL}"
+          BODY+="${TABLE_ROWS}"
+
+          if [ -n "$NOT_TRIGGERED" ]; then
+            BODY+="${NL}**Not triggered:** ${NOT_TRIGGERED}${NL}"
+          fi
+
+          BODY+="${NL}---${NL}"
+          BODY+="<sub>${PASS} passed | ${FAIL} failed | ${OTHER} other"
+          BODY+=" | Commit: <code>${SHORT_SHA}</code> | ${NOW}</sub>${NL}"
+
+          # ----------------------------------------------------------------
+          # Post or update PR comment
+          # ----------------------------------------------------------------
+
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --paginate \
+            --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" \
+            | head -1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" \
+              -X PATCH -f body="$BODY" > /dev/null
+            echo "Updated comment ${COMMENT_ID} on PR #${PR_NUMBER}"
+          else
+            gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              -f body="$BODY" > /dev/null
+            echo "Created comment on PR #${PR_NUMBER}"
+          fi

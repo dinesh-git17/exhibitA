@@ -1,0 +1,31 @@
+# CODEOWNERS -- Exhibit A
+#
+# Default ownership for all files. Last matching pattern wins.
+# Reference: CLAUDE.md S4, design doc S8.1 (iOS), S7.1 (backend)
+
+# Default: repository owner owns everything
+* @dinesh-git17
+
+# Backend (FastAPI, Python)
+/app/ @dinesh-git17
+
+# iOS (SwiftUI)
+/ExhibitA/ @dinesh-git17
+/ExhibitATests/ @dinesh-git17
+
+# Design system and theme
+/ExhibitA/**/Design/ @dinesh-git17
+
+# Admin panel
+/app/templates/ @dinesh-git17
+/app/static/ @dinesh-git17
+
+# Governance
+/CLAUDE.md @dinesh-git17
+/.claude/ @dinesh-git17
+
+# CI/CD
+/.github/ @dinesh-git17
+
+# Repository scripts
+/scripts/ @dinesh-git17

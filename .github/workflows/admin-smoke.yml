@@ -1,0 +1,147 @@
+# admin-smoke.yml -- Admin panel template and route validation
+#
+# Surfaces: app/routes/admin.py, app/templates/, app/static/
+# Purpose: Validates Jinja2 templates render without syntax errors,
+#          checks that referenced static assets exist, and verifies
+#          admin route registration. The admin panel is Jinja2 + HTMX
+#          served by FastAPI (design doc S9).
+# Guards: Skips if admin templates or routes do not exist
+
+name: Admin Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/routes/admin.py"
+      - "app/templates/**"
+      - "app/static/**"
+      - ".github/workflows/admin-smoke.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/routes/admin.py"
+      - "app/templates/**"
+      - "app/static/**"
+      - ".github/workflows/admin-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-smoke-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  smoke:
+    name: Admin panel validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect admin surface
+        id: detect
+        run: |
+          HAS_TEMPLATES=false
+          HAS_ROUTES=false
+          if [ -d "app/templates" ] && [ -n "$(find app/templates -name '*.html' -print -quit 2>/dev/null)" ]; then
+            HAS_TEMPLATES=true
+          fi
+          if [ -f "app/routes/admin.py" ]; then
+            HAS_ROUTES=true
+          fi
+          echo "has-templates=$HAS_TEMPLATES" >> "$GITHUB_OUTPUT"
+          echo "has-routes=$HAS_ROUTES" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_TEMPLATES" = "true" ] || [ "$HAS_ROUTES" = "true" ]; then
+            echo "has-admin=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-admin=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.detect.outputs.has-admin == 'true'
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        if: steps.detect.outputs.has-admin == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install jinja2
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Validate Jinja2 template syntax
+        if: steps.detect.outputs.has-templates == 'true'
+        run: |
+          set -euo pipefail
+          python3 -c "
+          import sys
+          from pathlib import Path
+          from jinja2 import Environment, FileSystemLoader, TemplateSyntaxError
+
+          template_dir = Path('app/templates')
+          env = Environment(loader=FileSystemLoader(str(template_dir)))
+          errors = 0
+
+          for tmpl_path in sorted(template_dir.rglob('*.html')):
+              rel = tmpl_path.relative_to(template_dir)
+              try:
+                  env.get_template(str(rel))
+                  print(f'  OK: {rel}')
+              except TemplateSyntaxError as e:
+                  print(f'::error file=app/templates/{rel},line={e.lineno}::{e.message}')
+                  errors += 1
+
+          if errors:
+              print(f'\n{errors} template(s) have syntax errors')
+              sys.exit(1)
+          print('\nAll templates passed syntax validation')
+          "
+
+      - name: Check static asset references
+        if: steps.detect.outputs.has-templates == 'true'
+        run: |
+          set -euo pipefail
+          WARNINGS=0
+          # Extract referenced static files from templates
+          REFS=$(grep -rohE '(href|src)="[^"]*static/[^"]*"' app/templates/ 2>/dev/null | \
+                 grep -oE 'static/[^"]*' | sort -u || true)
+
+          if [ -z "$REFS" ]; then
+            echo "No static asset references found in templates"
+            exit 0
+          fi
+
+          echo "Checking static asset references..."
+          while IFS= read -r ref; do
+            ASSET_PATH="app/$ref"
+            if [ ! -f "$ASSET_PATH" ]; then
+              echo "::warning::Template references $ref but file not found at $ASSET_PATH"
+              WARNINGS=$((WARNINGS + 1))
+            else
+              echo "  OK: $ref"
+            fi
+          done <<< "$REFS"
+
+          if [ "$WARNINGS" -gt 0 ]; then
+            echo "::warning::$WARNINGS static asset reference(s) could not be resolved"
+          fi
+
+      - name: Validate HTMX attributes
+        if: steps.detect.outputs.has-templates == 'true'
+        run: |
+          set -euo pipefail
+          echo "Scanning for HTMX attribute usage..."
+          HTMX_COUNT=$(grep -rcE 'hx-(get|post|put|delete|swap|target|trigger|push-url)' app/templates/ 2>/dev/null || echo "0")
+          echo "HTMX attribute instances: $HTMX_COUNT"
+
+          # Verify htmx.min.js exists if HTMX attributes are used
+          if [ "$HTMX_COUNT" != "0" ] && [ ! -f "app/static/htmx.min.js" ]; then
+            echo "::warning::Templates use HTMX attributes but app/static/htmx.min.js not found"
+          fi
+
+      - name: Skip notice
+        if: steps.detect.outputs.has-admin != 'true'
+        run: echo "::notice::Admin panel surface not found -- skipping smoke checks"

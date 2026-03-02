@@ -1,0 +1,175 @@
+# pr-governance.yml -- Automatic PR labeling and owner assignment
+#
+# Detects changed paths in a pull request and applies surface labels
+# (surface/backend, surface/ios, surface/admin, etc.). Assigns the
+# repository owner as PR assignee. Labels are created idempotently
+# on each run so the workflow is safe in fresh repositories.
+#
+# Surfaces mapped from design doc:
+#   app/            -> surface/backend
+#   ExhibitA/       -> surface/ios
+#   ExhibitATests/  -> surface/ios
+#   app/templates/  -> surface/admin
+#   app/static/     -> surface/admin
+#   docs/           -> surface/docs
+#   scripts/        -> surface/scripts
+#   .github/        -> surface/ci
+#   .claude/        -> governance
+#   CLAUDE.md       -> governance
+
+name: PR Governance
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-governance-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  OWNER: dinesh-git17
+
+jobs:
+  label-and-assign:
+    name: Label and assign
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "surface/backend"  --color "0E8A16" --description "Backend (FastAPI) changes"    --force
+          gh label create "surface/ios"      --color "1D76DB" --description "iOS (SwiftUI) changes"        --force
+          gh label create "surface/admin"    --color "D4C5F9" --description "Admin panel changes"          --force
+          gh label create "surface/docs"     --color "F9D0C4" --description "Documentation changes"        --force
+          gh label create "surface/scripts"  --color "FEF2C0" --description "Repository scripts"           --force
+          gh label create "surface/ci"       --color "BFD4F2" --description "CI/CD workflow changes"       --force
+          gh label create "governance"       --color "B60205" --description "Governance and skill changes" --force
+          gh label create "surface/schema"   --color "C2E0C6" --description "Database schema changes"     --force
+          gh label create "surface/theme"    --color "E8D5B7" --description "Design tokens and assets"    --force
+
+      - name: Detect changed paths and apply labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          CHANGED=$(git diff --name-only "$BASE"..."$HEAD" 2>/dev/null || true)
+
+          if [ -z "$CHANGED" ]; then
+            echo "No changed files detected"
+            exit 0
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED"
+          echo ""
+
+          LABELS=""
+
+          add_label() {
+            if [ -z "$LABELS" ]; then
+              LABELS="$1"
+            else
+              LABELS="$LABELS,$1"
+            fi
+          }
+
+          # Backend: app/ (excluding templates and static which are admin)
+          if echo "$CHANGED" | grep -qE '^app/' && echo "$CHANGED" | grep -qvE '^app/(templates|static)/'; then
+            add_label "surface/backend"
+          fi
+
+          # iOS: ExhibitA/ or ExhibitATests/
+          if echo "$CHANGED" | grep -qE '^(ExhibitA|ExhibitATests)/'; then
+            add_label "surface/ios"
+          fi
+
+          # Admin panel: app/templates/ or app/static/
+          if echo "$CHANGED" | grep -qE '^app/(templates|static)/'; then
+            add_label "surface/admin"
+          fi
+
+          # Docs
+          if echo "$CHANGED" | grep -qE '^docs/'; then
+            add_label "surface/docs"
+          fi
+
+          # Scripts
+          if echo "$CHANGED" | grep -qE '^scripts/'; then
+            add_label "surface/scripts"
+          fi
+
+          # CI workflows
+          if echo "$CHANGED" | grep -qE '^\.github/'; then
+            add_label "surface/ci"
+          fi
+
+          # Governance: CLAUDE.md or .claude/ skill definitions
+          if echo "$CHANGED" | grep -qE '^(CLAUDE\.md|\.claude/)'; then
+            add_label "governance"
+          fi
+
+          # Database schema
+          if echo "$CHANGED" | grep -qE '(\.sql$|app/db\.py$|migrations/)'; then
+            add_label "surface/schema"
+          fi
+
+          # Theme and design tokens
+          if echo "$CHANGED" | grep -qE '(Theme\.swift|\.xcassets/|Design/)'; then
+            add_label "surface/theme"
+          fi
+
+          if [ -n "$LABELS" ]; then
+            echo "Applying labels: $LABELS"
+            gh pr edit "$PR_NUMBER" --add-label "$LABELS"
+          else
+            echo "No surface labels matched"
+          fi
+
+      - name: Assign owner
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          CURRENT_ASSIGNEES=$(gh pr view "$PR_NUMBER" --json assignees --jq '.assignees[].login' 2>/dev/null || true)
+
+          if echo "$CURRENT_ASSIGNEES" | grep -qF "$OWNER"; then
+            echo "Owner $OWNER already assigned"
+          else
+            echo "Assigning $OWNER"
+            gh pr edit "$PR_NUMBER" --add-assignee "$OWNER"
+          fi
+
+      - name: Request owner review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          # Do not request review from the PR author (GitHub rejects this)
+          if [ "$PR_AUTHOR" = "$OWNER" ]; then
+            echo "PR author is the owner -- skipping self-review request"
+            exit 0
+          fi
+
+          CURRENT_REVIEWERS=$(gh pr view "$PR_NUMBER" --json reviewRequests --jq '.reviewRequests[].login' 2>/dev/null || true)
+
+          if echo "$CURRENT_REVIEWERS" | grep -qF "$OWNER"; then
+            echo "Owner $OWNER already requested as reviewer"
+          else
+            echo "Requesting review from $OWNER"
+            gh pr edit "$PR_NUMBER" --add-reviewer "$OWNER" || echo "::notice::Could not request review -- owner may need write access"
+          fi

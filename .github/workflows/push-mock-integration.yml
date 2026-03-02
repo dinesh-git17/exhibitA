@@ -1,0 +1,108 @@
+# push-mock-integration.yml -- APNS push notification payload and flow validation
+#
+# Surfaces: app/apns.py (APNS client), app/routes/admin.py (push trigger)
+# Purpose: Validates push notification payload structure matches the design doc
+#          notification copy (S9.6), verifies APNS client configuration patterns,
+#          and ensures device token handling is correct. Does NOT make real APNS
+#          calls -- all validation is static and mock-based.
+# Guards: Skips if APNS module does not exist
+
+name: Push Mock Integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/apns.py"
+      - "app/routes/admin.py"
+      - "tests/**/test_*push*"
+      - "tests/**/test_*apns*"
+      - "tests/**/test_*notification*"
+      - ".github/workflows/push-mock-integration.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/apns.py"
+      - "app/routes/admin.py"
+      - "tests/**/test_*push*"
+      - "tests/**/test_*apns*"
+      - "tests/**/test_*notification*"
+      - ".github/workflows/push-mock-integration.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: push-mock-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  validate:
+    name: Push notification validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect APNS surface
+        id: detect
+        run: |
+          if [ -f "app/apns.py" ]; then
+            echo "has-apns=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-apns=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::app/apns.py not found -- skipping push notification checks"
+          fi
+          if [ -n "$(find tests -name 'test_*push*' -o -name 'test_*apns*' -o -name 'test_*notification*' -print -quit 2>/dev/null)" ]; then
+            echo "has-tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-tests=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.detect.outputs.has-apns == 'true'
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        if: steps.detect.outputs.has-apns == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install pytest pytest-asyncio
+
+      - name: Validate APNS client structure
+        if: steps.detect.outputs.has-apns == 'true'
+        run: |
+          set -euo pipefail
+          echo "Checking APNS client patterns..."
+
+          # Verify JWT-based auth pattern (not certificate-based)
+          if grep -q 'APNS_KEY_ID\|APNS_TEAM_ID\|APNS_AUTH_KEY' app/apns.py; then
+            echo "  OK: JWT token-based authentication detected"
+          else
+            echo "::warning::APNS client may not use JWT token-based auth (design doc S9.6)"
+          fi
+
+          # Verify async client pattern
+          if grep -q 'async\|await\|aioapns' app/apns.py; then
+            echo "  OK: Async APNS client pattern detected"
+          else
+            echo "::warning::APNS client should use async pattern (aioapns per design doc S7.1)"
+          fi
+
+          # Verify notification payloads match design doc content types
+          for content_type in "contract" "letter" "thought"; do
+            if grep -q "$content_type" app/apns.py; then
+              echo "  OK: Payload handling for $content_type found"
+            else
+              echo "::notice::No explicit $content_type payload in APNS client"
+            fi
+          done
+
+      - name: Run push notification tests
+        if: steps.detect.outputs.has-tests == 'true'
+        run: |
+          pytest tests/ -v --tb=short -k "push or apns or notification"

@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    "charliermarsh.ruff",
+    "ms-python.python",
+    "ms-python.mypy-type-checker",
+    "vknabel.vscode-swiftformat",
+    "sswg.swift-lang",
+    "DavidAnson.vscode-markdownlint",
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+    "samuelcolvin.jinjahtml",
+    "timonwong.shellcheck",
+    "EditorConfig.EditorConfig"
+  ],
+  "unwantedRecommendations": [
+    "ms-python.autopep8",
+    "ms-python.black-formatter",
+    "ms-python.isort",
+    "esbenp.prettier-vscode"
+  ]
+}

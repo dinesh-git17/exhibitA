@@ -1,0 +1,68 @@
+[project]
+name = "exhibit-a"
+version = "0.1.0"
+requires-python = ">=3.13"
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+  "F",    # pyflakes
+  "E",    # pycodestyle errors
+  "W",    # pycodestyle warnings
+  "I",    # isort
+  "UP",   # pyupgrade
+  "B",    # flake8-bugbear
+  "SIM",  # flake8-simplify
+  "C4",   # flake8-comprehensions
+  "PTH",  # flake8-use-pathlib
+  "S",    # flake8-bandit (security)
+  "A",    # flake8-builtins
+  "EM",   # flake8-errmsg
+  "T20",  # flake8-print
+  "RET",  # flake8-return
+  "PERF", # perflint
+  "RUF",  # ruff-specific
+]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*.py" = ["T20"]
+".claude/skills/*/scripts/*.py" = ["E501", "T20", "SIM102", "SIM110", "PERF401", "B007", "S104", "S314", "S603", "UP038"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+follow_imports = "normal"
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+  "aioapns.*",
+  "aiosqlite.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+python_files = ["test_*.py"]
+python_functions = ["test_*"]

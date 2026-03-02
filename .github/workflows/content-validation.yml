@@ -1,0 +1,138 @@
+# content-validation.yml -- Repository content hygiene and governance enforcement
+#
+# Surfaces: Entire repository (scripts/protocol-zero.sh, scripts/check-em-dashes.sh)
+# Purpose: Runs Protocol Zero attribution scanning and typographic lint on every
+#          push and PR. These are the two governance scripts defined in the design
+#          doc (S10.10, S10.11) and CLAUDE.md (S2.2, S2.3). Lightweight -- runs
+#          on ubuntu, no language toolchain required.
+# Guards: Scripts must exist. If missing, job warns and exits cleanly.
+
+name: Content Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-validation-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  protocol-zero:
+    name: Protocol Zero scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Protocol Zero
+        run: |
+          if [ -f "scripts/protocol-zero.sh" ]; then
+            chmod +x scripts/protocol-zero.sh
+            ./scripts/protocol-zero.sh
+          else
+            echo "::warning::scripts/protocol-zero.sh not found -- cannot enforce Protocol Zero"
+            exit 1
+          fi
+
+      - name: Validate commit messages on PR
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          COMMITS=$(git log --format='%H' "$BASE".."$HEAD" 2>/dev/null || true)
+
+          if [ -z "$COMMITS" ]; then
+            echo "No commits to validate"
+            exit 0
+          fi
+
+          ERRORS=0
+          while IFS= read -r sha; do
+            MSG=$(git log --format='%B' -1 "$sha")
+            if ! ./scripts/protocol-zero.sh --commit-msg "$MSG" 2>/dev/null; then
+              echo "::error::Commit $sha violates Protocol Zero"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done <<< "$COMMITS"
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::$ERRORS commit(s) violate Protocol Zero"
+            exit 1
+          fi
+
+  typographic-lint:
+    name: Typographic lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run typographic character scan
+        run: |
+          if [ -f "scripts/check-em-dashes.sh" ]; then
+            chmod +x scripts/check-em-dashes.sh
+            ./scripts/check-em-dashes.sh
+          else
+            echo "::warning::scripts/check-em-dashes.sh not found -- cannot enforce typographic lint"
+            exit 1
+          fi
+
+  commit-format:
+    name: Conventional Commits
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit message format
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          COMMITS=$(git log --format='%H' "$BASE".."$HEAD" 2>/dev/null || true)
+
+          if [ -z "$COMMITS" ]; then
+            echo "No commits to validate"
+            exit 0
+          fi
+
+          # Conventional Commits pattern: type(scope): description
+          # Types: feat, fix, refactor, test, chore, docs
+          PATTERN='^(feat|fix|refactor|test|chore|docs)\([a-z][a-z0-9-]*\): .{1,72}$'
+
+          ERRORS=0
+          while IFS= read -r sha; do
+            SUBJECT=$(git log --format='%s' -1 "$sha")
+            if ! echo "$SUBJECT" | grep -Eq "$PATTERN"; then
+              echo "::error::Commit $sha has non-conforming message: $SUBJECT"
+              echo "  Expected: type(scope): imperative description (under 72 chars)"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done <<< "$COMMITS"
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::$ERRORS commit(s) do not follow Conventional Commits (CLAUDE.md S4.3)"
+            exit 1
+          fi
+          echo "All commit messages conform to Conventional Commits format"
+
+      - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          PATTERN='^(feat|fix|refactor|test|chore|docs)\([a-z][a-z0-9-]*\): .{1,72}$'
+          if ! echo "$PR_TITLE" | grep -Eq "$PATTERN"; then
+            echo "::error::PR title does not follow Conventional Commits format: $PR_TITLE"
+            echo "  Expected: type(scope): imperative description (under 70 chars)"
+            exit 1
+          fi
+          echo "PR title conforms to Conventional Commits format"

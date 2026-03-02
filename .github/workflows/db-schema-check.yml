@@ -1,0 +1,94 @@
+# db-schema-check.yml -- SQLite schema validation and migration safety
+#
+# Surfaces: app/db.py, any *.sql files, schema definitions
+# Purpose: Validates SQL schema files parse correctly, detects destructive
+#          operations (DROP TABLE, DELETE without WHERE), and ensures schema
+#          changes do not break the content/signatures/sync_log/device_tokens
+#          tables defined in the design doc (S7.2).
+# Guards: Skips if no Python backend or SQL files exist
+
+name: DB Schema Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/db.py"
+      - "app/models.py"
+      - "**/*.sql"
+      - "migrations/**"
+      - ".github/workflows/db-schema-check.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/db.py"
+      - "app/models.py"
+      - "**/*.sql"
+      - "migrations/**"
+      - ".github/workflows/db-schema-check.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-schema-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  schema-check:
+    name: Validate schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for schema-relevant files
+        id: detect
+        run: |
+          HAS_FILES=false
+          if [ -f "app/db.py" ]; then HAS_FILES=true; fi
+          if compgen -G "**/*.sql" > /dev/null 2>&1; then HAS_FILES=true; fi
+          if [ -d "migrations" ]; then HAS_FILES=true; fi
+          echo "has-schema=$HAS_FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Validate SQL syntax
+        if: steps.detect.outputs.has-schema == 'true'
+        run: |
+          set -euo pipefail
+          ERRORS=0
+          for sql_file in $(find . -name '*.sql' -not -path './.git/*' -not -path './.venv/*' 2>/dev/null); do
+            echo "Validating: $sql_file"
+            if ! sqlite3 :memory: ".read $sql_file" 2>/tmp/sql_err; then
+              echo "::error file=$sql_file::SQL syntax error: $(cat /tmp/sql_err)"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::$ERRORS SQL file(s) failed validation"
+            exit 1
+          fi
+          echo "All SQL files validated successfully"
+
+      - name: Scan for destructive operations in diff
+        if: steps.detect.outputs.has-schema == 'true' && github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          WARNINGS=0
+          DESTRUCTIVE_PATTERNS="DROP TABLE|DROP INDEX|DELETE FROM(?! .* WHERE)|TRUNCATE|ALTER TABLE .* DROP COLUMN"
+          DIFF=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.sql' 'app/db.py' 'migrations/' 2>/dev/null || true)
+          if [ -z "$DIFF" ]; then
+            echo "No schema-related changes in diff"
+            exit 0
+          fi
+          ADDED_LINES=$(echo "$DIFF" | grep '^+' | grep -v '^+++' || true)
+          if echo "$ADDED_LINES" | grep -iEq "$DESTRUCTIVE_PATTERNS"; then
+            echo "::warning::Destructive SQL operation detected in PR diff. Requires manual review."
+            echo "$ADDED_LINES" | grep -iE "$DESTRUCTIVE_PATTERNS" || true
+            WARNINGS=$((WARNINGS + 1))
+          fi
+          if [ "$WARNINGS" -gt 0 ]; then
+            echo "::warning::$WARNINGS destructive operation warning(s) -- review required per CLAUDE.md S14"
+          fi
+
+      - name: Skip notice
+        if: steps.detect.outputs.has-schema != 'true'
+        run: echo "::notice::No schema files found -- skipping DB schema checks"

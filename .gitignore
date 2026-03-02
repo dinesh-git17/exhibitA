@@ -1,0 +1,103 @@
+# ─────────────────────────────────────────────────
+# macOS
+# ─────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ─────────────────────────────────────────────────
+# Xcode / Swift
+# ─────────────────────────────────────────────────
+DerivedData/
+build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+xcuserdata/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.xcscmblueprint
+*.xcactivitylog
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Package.resolved
+Packages/
+
+# SwiftLint / SwiftFormat caches
+.swiftlint/
+
+# ─────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+*.so
+*.pyd
+
+# Virtual environment
+.venv/
+
+# Type checking / linting caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# ─────────────────────────────────────────────────
+# Secrets & Environment
+# ─────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.p8
+*.p12
+*.pem
+*.key
+
+# Xcconfig with secrets (per-signer build variants)
+*.xcconfig
+!*.xcconfig.example
+
+# ─────────────────────────────────────────────────
+# Database (SQLite WAL mode)
+# ─────────────────────────────────────────────────
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# ─────────────────────────────────────────────────
+# Editors & IDEs
+# ─────────────────────────────────────────────────
+*.swp
+*.swo
+*~
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ─────────────────────────────────────────────────
+# Claude Code
+# ─────────────────────────────────────────────────
+.claude/projects/
+.claude/todos/
+.claude/settings.local.json

@@ -1,0 +1,130 @@
+# api-sync-contract.yml -- API contract validation between backend and iOS
+#
+# Surfaces: app/models.py (Pydantic schemas), app/routes/ (endpoint definitions),
+#           ExhibitA/Core/API/APIModels.swift (Codable response types)
+# Purpose: Validates that API endpoint paths, response field names, and content
+#          types declared in the backend remain consistent with the iOS client.
+#          Catches contract drift before runtime failures.
+# Guards: Skips if either surface (backend or iOS) does not exist
+# Reference: Design doc S7.3 (API endpoints), S8.1 (iOS project structure)
+
+name: API Sync Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/models.py"
+      - "app/routes/**"
+      - "ExhibitA/**/API/**"
+      - "ExhibitA/**/APIModels.swift"
+      - ".github/workflows/api-sync-contract.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/models.py"
+      - "app/routes/**"
+      - "ExhibitA/**/API/**"
+      - "ExhibitA/**/APIModels.swift"
+      - ".github/workflows/api-sync-contract.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-sync-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract-check:
+    name: Validate API contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect surfaces
+        id: detect
+        run: |
+          HAS_BACKEND=false
+          HAS_IOS=false
+          if [ -f "app/models.py" ] && [ -d "app/routes" ]; then
+            HAS_BACKEND=true
+          fi
+          if [ -d "ExhibitA" ] && [ -n "$(find ExhibitA -name 'APIModels.swift' -print -quit 2>/dev/null)" ]; then
+            HAS_IOS=true
+          fi
+          echo "has-backend=$HAS_BACKEND" >> "$GITHUB_OUTPUT"
+          echo "has-ios=$HAS_IOS" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_BACKEND" = "true" ] && [ "$HAS_IOS" = "true" ]; then
+            echo "both=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "both=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract backend endpoint paths
+        if: steps.detect.outputs.has-backend == 'true'
+        run: |
+          set -euo pipefail
+          echo "--- Backend route declarations ---"
+          grep -rn '@\(app\|router\)\.\(get\|post\|put\|delete\|patch\)' app/routes/ 2>/dev/null || echo "No route decorators found"
+          echo ""
+          echo "--- Pydantic model fields ---"
+          grep -n 'class.*BaseModel' app/models.py 2>/dev/null || echo "No Pydantic models found"
+
+      - name: Extract iOS API model fields
+        if: steps.detect.outputs.has-ios == 'true'
+        run: |
+          set -euo pipefail
+          echo "--- iOS Codable types ---"
+          find ExhibitA -name 'APIModels.swift' -o -name 'ExhibitAClient.swift' 2>/dev/null | while read -r f; do
+            echo "File: $f"
+            grep -n 'struct\|enum\|case\|let\|var' "$f" 2>/dev/null || true
+          done
+
+      - name: Validate endpoint consistency
+        if: steps.detect.outputs.both == 'true'
+        run: |
+          set -euo pipefail
+          echo "Checking endpoint path consistency between backend and iOS client..."
+
+          # Extract paths from backend route decorators
+          BACKEND_PATHS=$(grep -rohE '"/(health|content|signatures|sync|device-tokens|admin)[^"]*"' app/routes/*.py 2>/dev/null | sort -u || true)
+
+          # Extract paths from iOS API client
+          IOS_PATHS=$(grep -rohE '"/(health|content|signatures|sync|device-tokens)[^"]*"' ExhibitA/**/API/*.swift 2>/dev/null | sort -u || true)
+
+          if [ -z "$BACKEND_PATHS" ]; then
+            echo "::notice::No extractable backend route paths found -- manual review recommended"
+            exit 0
+          fi
+
+          if [ -z "$IOS_PATHS" ]; then
+            echo "::notice::No extractable iOS endpoint paths found -- manual review recommended"
+            exit 0
+          fi
+
+          echo "Backend paths:"
+          echo "$BACKEND_PATHS"
+          echo ""
+          echo "iOS paths:"
+          echo "$IOS_PATHS"
+
+          # Check for iOS paths not in backend (potential 404s)
+          MISSING=0
+          while IFS= read -r ios_path; do
+            if ! echo "$BACKEND_PATHS" | grep -qF "$ios_path"; then
+              echo "::warning::iOS references path $ios_path not found in backend routes"
+              MISSING=$((MISSING + 1))
+            fi
+          done <<< "$IOS_PATHS"
+
+          if [ "$MISSING" -gt 0 ]; then
+            echo "::warning::$MISSING iOS endpoint path(s) may not match backend routes"
+          else
+            echo "All iOS endpoint paths have matching backend routes"
+          fi
+
+      - name: Skip notice
+        if: steps.detect.outputs.both != 'true'
+        run: |
+          echo "::notice::API sync contract requires both backend (app/models.py, app/routes/) and iOS (ExhibitA/**/APIModels.swift) surfaces. Skipping."

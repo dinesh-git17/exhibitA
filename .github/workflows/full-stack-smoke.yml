@@ -1,0 +1,193 @@
+# full-stack-smoke.yml -- Cross-surface integration validation
+#
+# Surfaces: All (app/, ExhibitA/, scripts/, docs/)
+# Purpose: Runs when changes span multiple surfaces or on direct pushes to main.
+#          Executes governance scripts (Protocol Zero, typographic lint), validates
+#          cross-surface consistency, and ensures the full repository is in a
+#          coherent state. Acts as the final quality gate before merge.
+# Guards: Individual checks skip gracefully if their surface does not exist
+# Reference: CLAUDE.md S12 (Definition of Done), S15 (Enforcement)
+
+name: Full Stack Smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-stack-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  governance:
+    name: Repository governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Protocol Zero scan
+        run: |
+          if [ -f "scripts/protocol-zero.sh" ]; then
+            chmod +x scripts/protocol-zero.sh
+            ./scripts/protocol-zero.sh
+          else
+            echo "::warning::scripts/protocol-zero.sh not found"
+          fi
+
+      - name: Typographic lint
+        run: |
+          if [ -f "scripts/check-em-dashes.sh" ]; then
+            chmod +x scripts/check-em-dashes.sh
+            ./scripts/check-em-dashes.sh
+          else
+            echo "::warning::scripts/check-em-dashes.sh not found"
+          fi
+
+  backend-smoke:
+    name: Backend smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect backend
+        id: detect
+        run: |
+          if [ -d "app" ] && [ -f "app/__init__.py" ] || [ -f "app/__main__.py" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.detect.outputs.exists == 'true'
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install and validate imports
+        if: steps.detect.outputs.exists == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          python -c "
+          import importlib, sys
+          modules = ['app']
+          errors = 0
+          for mod in modules:
+              try:
+                  importlib.import_module(mod)
+                  print(f'  OK: {mod}')
+              except Exception as e:
+                  print(f'  FAIL: {mod} -- {e}')
+                  errors += 1
+          sys.exit(1 if errors else 0)
+          "
+
+      - name: Health check smoke test
+        if: steps.detect.outputs.exists == 'true'
+        run: |
+          set -euo pipefail
+          # Start the backend briefly to validate it boots
+          timeout 15 python -m app &
+          SERVER_PID=$!
+          sleep 3
+
+          # Check /health endpoint
+          if curl -sf http://localhost:8001/health > /dev/null 2>&1; then
+            echo "Health check passed"
+          else
+            echo "::warning::Backend did not respond on /health within startup window"
+          fi
+
+          kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
+
+      - name: Skip notice
+        if: steps.detect.outputs.exists != 'true'
+        run: echo "::notice::Backend surface not found -- skipping smoke test"
+
+  ios-compile-check:
+    name: iOS compile check
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect iOS project
+        id: detect
+        run: |
+          if [ -d "ExhibitA" ] && [ -n "$(find ExhibitA -name '*.xcodeproj' -o -name 'Package.swift' -print -quit 2>/dev/null)" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Select Xcode
+        if: steps.detect.outputs.exists == 'true'
+        run: |
+          XCODE_PATH=$(find /Applications -maxdepth 1 -name 'Xcode_17*' -print -quit 2>/dev/null || true)
+          if [ -z "$XCODE_PATH" ]; then
+            XCODE_PATH=$(find /Applications -maxdepth 1 -name 'Xcode*.app' | sort -V | tail -1)
+          fi
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+
+      - name: Cache SPM
+        if: steps.detect.outputs.exists == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            .build
+          key: ${{ runner.os }}-${{ runner.arch }}-spm-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-spm-
+
+      - name: Build (no code signing)
+        if: steps.detect.outputs.exists == 'true'
+        run: |
+          SCHEME=$(xcodebuild -list -json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('project',d.get('workspace',{})).get('schemes',['ExhibitA'])[0])" 2>/dev/null || echo "ExhibitA")
+          xcodebuild build \
+            -scheme "$SCHEME" \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tail -20
+
+      - name: Skip notice
+        if: steps.detect.outputs.exists != 'true'
+        run: echo "::notice::iOS project not found -- skipping compile check"
+
+  gate:
+    name: Full stack gate
+    if: always()
+    needs: [governance, backend-smoke, ios-compile-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate results
+        run: |
+          echo "Governance: ${{ needs.governance.result }}"
+          echo "Backend smoke: ${{ needs.backend-smoke.result }}"
+          echo "iOS compile: ${{ needs.ios-compile-check.result }}"
+
+          if [ "${{ needs.governance.result }}" = "failure" ]; then
+            echo "::error::Governance checks failed -- blocking merge"
+            exit 1
+          fi
+
+          if [ "${{ needs.backend-smoke.result }}" = "failure" ]; then
+            echo "::error::Backend smoke test failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.ios-compile-check.result }}" = "failure" ]; then
+            echo "::error::iOS compile check failed"
+            exit 1
+          fi
+
+          echo "All checks passed or skipped appropriately"

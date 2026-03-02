@@ -1,0 +1,111 @@
+# Exhibit A -- Pre-Commit Hook Configuration
+# Enforcement: CLAUDE.md S2 (Protocol Zero), S3 (Code Standards),
+#              S4 (Git Workflow), S10 (Engineering Standards)
+
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  # ── File hygiene + Python syntax guards ──────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+        exclude: '\.vscode/'
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: ['--branch', 'main']
+      - id: check-ast
+      - id: debug-statements
+
+  # ── Python: lint + format ───────────────────────────────────────
+  # Rule set governed by pyproject.toml [tool.ruff] per CLAUDE.md S3.5
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.2
+    hooks:
+      - id: ruff
+        types_or: [python, pyi]
+        args: [--fix]
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # ── Secret scanning ────────────────────────────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.22.1
+    hooks:
+      - id: gitleaks
+
+  # ── Conventional Commits (S4.3) ────────────────────────────────
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          - --strict
+          - --force-scope
+          - feat
+          - fix
+          - refactor
+          - test
+          - chore
+          - docs
+
+  # ── Repository governance (local) ──────────────────────────────
+  - repo: local
+    hooks:
+      # Protocol Zero: AI attribution scanner (S2)
+      - id: protocol-zero
+        name: "Protocol Zero (S2)"
+        entry: ./scripts/protocol-zero.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+
+      # Typographic lint: em dash and smart quote detection (S2.3)
+      - id: check-em-dashes
+        name: "Typographic lint (S2.3)"
+        entry: ./scripts/check-em-dashes.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+
+      # Block runtime database artifacts from being committed
+      - id: no-db-artifacts
+        name: "Block database artifacts"
+        entry: bash -c 'printf "\033[0;31m[BLOCKED]\033[0m Database files must not be committed.\n         Matched files:\n"; for f in "$@"; do printf "           %s\n" "$f"; done; exit 1' --
+        language: system
+        files: '\.(db|db-wal|db-shm|sqlite|sqlite-wal|sqlite-shm)$'
+
+      # Block .env files (secrets boundary -- S10.4)
+      - id: no-env-files
+        name: "Block .env files (S10.4)"
+        entry: bash -c 'printf "\033[0;31m[BLOCKED]\033[0m .env files must not be committed (S10.4).\n         Matched files:\n"; for f in "$@"; do printf "           %s\n" "$f"; done; exit 1' --
+        language: system
+        files: '(^|/)\.env(\.|$)'
+        exclude: '\.env\.example$'
+
+      # Block credential/key files (S10.4)
+      - id: no-credential-files
+        name: "Block credential files (S10.4)"
+        entry: bash -c 'printf "\033[0;31m[BLOCKED]\033[0m Credential files must not be committed (S10.4).\n         Matched files:\n"; for f in "$@"; do printf "           %s\n" "$f"; done; exit 1' --
+        language: system
+        files: '\.(p8|p12|pem|key)$'
+
+      # Block xcconfig files with secrets (S10.4)
+      - id: no-xcconfig-secrets
+        name: "Block xcconfig files (S10.4)"
+        entry: bash -c 'printf "\033[0;31m[BLOCKED]\033[0m .xcconfig files with secrets must not be committed (S10.4).\n         Matched files:\n"; for f in "$@"; do printf "           %s\n" "$f"; done; exit 1' --
+        language: system
+        files: '\.xcconfig$'
+        exclude: '\.xcconfig\.example$'

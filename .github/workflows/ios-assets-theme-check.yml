@@ -1,0 +1,149 @@
+# ios-assets-theme-check.yml -- Design token and asset catalog validation
+#
+# Surfaces: ExhibitA/Design/Theme.swift, ExhibitA/Resources/Assets.xcassets
+# Purpose: Validates that color tokens defined in Theme.swift match the design
+#          doc palette (S6.2), checks asset catalog completeness, and detects
+#          prohibited color values (pure white, pure black, saturated red, cool
+#          blue). Enforces the visual design system contract.
+# Guards: Skips if Design/ directory or Assets.xcassets does not exist
+# Reference: Design doc S6 (Visual Design System)
+
+name: iOS Assets & Theme Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ExhibitA/**/Design/**"
+      - "ExhibitA/**/Theme.swift"
+      - "ExhibitA/**/Resources/**"
+      - "ExhibitA/**/*.xcassets/**"
+      - ".github/workflows/ios-assets-theme-check.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ExhibitA/**/Design/**"
+      - "ExhibitA/**/Theme.swift"
+      - "ExhibitA/**/Resources/**"
+      - "ExhibitA/**/*.xcassets/**"
+      - ".github/workflows/ios-assets-theme-check.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-assets-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  theme-check:
+    name: Theme and asset validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect design surface
+        id: detect
+        run: |
+          HAS_THEME=false
+          HAS_ASSETS=false
+          if [ -n "$(find . -path '*/Design/Theme.swift' -print -quit 2>/dev/null)" ]; then
+            HAS_THEME=true
+          fi
+          if [ -n "$(find . -name '*.xcassets' -print -quit 2>/dev/null)" ]; then
+            HAS_ASSETS=true
+          fi
+          echo "has-theme=$HAS_THEME" >> "$GITHUB_OUTPUT"
+          echo "has-assets=$HAS_ASSETS" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_THEME" = "true" ] || [ "$HAS_ASSETS" = "true" ]; then
+            echo "has-design=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-design=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate prohibited colors in Theme.swift
+        if: steps.detect.outputs.has-theme == 'true'
+        run: |
+          set -euo pipefail
+          THEME_FILE=$(find . -path '*/Design/Theme.swift' -print -quit)
+          echo "Scanning $THEME_FILE for prohibited color values..."
+
+          ERRORS=0
+
+          # Pure white backgrounds (design doc S6.2: never use #FFFFFF as background)
+          if grep -nE '#FFFFFF|UIColor\.white|Color\.white' "$THEME_FILE" 2>/dev/null | grep -iv 'text\|foreground'; then
+            echo "::warning file=$THEME_FILE::Pure white (#FFFFFF) detected -- use warm ivory (#F2EFEA) per design doc S6.2"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          # Pure black text in light mode (design doc S6.2: warm shift required)
+          if grep -nE '#000000' "$THEME_FILE" 2>/dev/null; then
+            echo "::warning file=$THEME_FILE::Pure black (#000000) detected -- use near-black (#1A1A1A) per design doc S6.2"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          # Saturated reds (design doc S6.2: burgundy and dusty rose only)
+          if grep -nEi '#FF0000|#CC0000|#EE0000|#DD0000' "$THEME_FILE" 2>/dev/null; then
+            echo "::error file=$THEME_FILE::Saturated red detected -- use burgundy (#800020) or dusty rose (#DCA1A1)"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          # Cool blues (design doc S6.2: never use cool blue as primary/secondary)
+          if grep -nEi '#0000FF|#0066FF|#007AFF|systemBlue' "$THEME_FILE" 2>/dev/null; then
+            echo "::warning file=$THEME_FILE::Cool blue detected -- warm palette only per design doc S6.2"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          if [ "$ERRORS" -eq 0 ]; then
+            echo "No prohibited color values found"
+          else
+            echo "::warning::$ERRORS color violation(s) detected in theme file"
+          fi
+
+      - name: Validate asset catalog structure
+        if: steps.detect.outputs.has-assets == 'true'
+        run: |
+          set -euo pipefail
+          echo "Scanning asset catalogs..."
+
+          find . -name '*.xcassets' -not -path './.git/*' | while read -r catalog; do
+            echo "Catalog: $catalog"
+
+            # Count color sets and image sets
+            COLOR_SETS=$(find "$catalog" -name '*.colorset' 2>/dev/null | wc -l | tr -d ' ')
+            IMAGE_SETS=$(find "$catalog" -name '*.imageset' 2>/dev/null | wc -l | tr -d ' ')
+            echo "  Color sets: $COLOR_SETS"
+            echo "  Image sets: $IMAGE_SETS"
+
+            # Validate Contents.json exists in each set
+            find "$catalog" -name 'Contents.json' | while read -r contents; do
+              if ! python3 -c "import json; json.load(open('$contents'))" 2>/dev/null; then
+                echo "::error file=$contents::Invalid JSON in asset catalog Contents.json"
+              fi
+            done
+
+            # Check for dark mode variants in color sets
+            find "$catalog" -name '*.colorset' | while read -r colorset; do
+              CONTENTS="$colorset/Contents.json"
+              if [ -f "$CONTENTS" ]; then
+                HAS_DARK=$(python3 -c "
+          import json, sys
+          data = json.load(open('$CONTENTS'))
+          colors = data.get('colors', [])
+          has_dark = any(
+              c.get('appearances', [{}])[0].get('value') == 'dark'
+              for c in colors
+              if c.get('appearances')
+          )
+          print('true' if has_dark else 'false')
+          " 2>/dev/null || echo "false")
+                if [ "$HAS_DARK" = "false" ]; then
+                  echo "::warning file=$CONTENTS::Color set $(basename "$colorset") missing dark mode variant"
+                fi
+              fi
+            done
+          done
+
+      - name: Skip notice
+        if: steps.detect.outputs.has-design != 'true'
+        run: echo "::notice::Design surface (Theme.swift, Assets.xcassets) not found -- skipping theme checks"

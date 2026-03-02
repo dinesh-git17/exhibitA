@@ -1,0 +1,146 @@
+# backend-quality.yml -- Python backend lint, format, and type checking
+#
+# Surfaces: app/ (FastAPI backend), requirements.txt
+# Tools: ruff (format + lint), mypy (strict type checking), pytest
+# Guards: Skips all jobs if app/ directory does not exist
+# Reference: Design doc S7, CLAUDE.md S3.5
+
+name: Backend Quality
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - "setup.cfg"
+      - ".github/workflows/backend-quality.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - "setup.cfg"
+      - ".github/workflows/backend-quality.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-quality-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  detect:
+    name: Detect backend surface
+    runs-on: ubuntu-latest
+    outputs:
+      has-backend: ${{ steps.check.outputs.exists }}
+      has-tests: ${{ steps.check.outputs.has-tests }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            app
+            tests
+            requirements.txt
+          sparse-checkout-cone-mode: false
+
+      - name: Check backend directory
+        id: check
+        run: |
+          if [ -d "app" ] && [ -n "$(find app -name '*.py' -print -quit 2>/dev/null)" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Backend directory app/ not found or empty -- skipping quality checks"
+          fi
+          if [ -d "tests" ] && [ -n "$(find tests -name 'test_*.py' -print -quit 2>/dev/null)" ]; then
+            echo "has-tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-tests=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  lint:
+    name: Ruff lint + format
+    needs: detect
+    if: needs.detect.outputs.has-backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Ruff format check
+        run: ruff format --check app/
+
+      - name: Ruff lint
+        run: ruff check app/
+
+  typecheck:
+    name: Mypy strict
+    needs: detect
+    if: needs.detect.outputs.has-backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - uses: actions/cache@v4
+        with:
+          path: .mypy_cache
+          key: ${{ runner.os }}-mypy-${{ hashFiles('app/**/*.py') }}
+          restore-keys: |
+            ${{ runner.os }}-mypy-
+
+      - name: Mypy strict type check
+        run: mypy --strict app/
+
+  test:
+    name: Pytest
+    needs: detect
+    if: needs.detect.outputs.has-tests == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
