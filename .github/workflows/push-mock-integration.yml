@@ -72,6 +72,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
           pip install pytest pytest-asyncio
+          pip install -e .
 
       - name: Validate APNS client structure
         if: steps.detect.outputs.has-apns == 'true'
