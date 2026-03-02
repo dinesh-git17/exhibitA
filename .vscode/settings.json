@@ -248,7 +248,7 @@
       "style": "---"
     },
     // MD036: No emphasis as heading substitute
-    "MD036": true,
+    "MD036": false,
     // MD037: No spaces inside emphasis markers
     "MD037": true,
     // MD038: No spaces inside code spans
