@@ -23,6 +23,7 @@ select = [
 
 [lint.per-file-ignores]
 "scripts/*.py" = ["T20"]
+"tests/*.py" = ["S101", "S105"]
 ".claude/skills/*/scripts/*.py" = ["E501", "T20", "SIM102", "SIM110", "PERF401", "B007", "S104", "S314", "S603", "UP038"]
 
 [lint.isort]
