@@ -47,7 +47,7 @@ jobs:
       has-tests: ${{ steps.check.outputs.has-tests }}
       has-swiftlint: ${{ steps.check.outputs.has-swiftlint }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           sparse-checkout: |
             ExhibitA
@@ -82,7 +82,7 @@ jobs:
     if: needs.detect.outputs.has-project == 'true' && needs.detect.outputs.has-swiftlint == 'true'
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install SwiftLint
         run: brew install swiftlint
@@ -96,7 +96,7 @@ jobs:
     if: needs.detect.outputs.has-project == 'true'
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Select Xcode
         run: |
@@ -171,7 +171,7 @@ jobs:
     if: needs.detect.outputs.has-tests == 'true'
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Select Xcode
         run: |

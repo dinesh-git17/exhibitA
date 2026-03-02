@@ -29,7 +29,7 @@ jobs:
     name: Repository governance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Protocol Zero scan
         run: |
@@ -53,7 +53,7 @@ jobs:
     name: Backend smoke test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Detect backend
         id: detect
@@ -117,7 +117,7 @@ jobs:
     name: iOS compile check
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Detect iOS project
         id: detect
