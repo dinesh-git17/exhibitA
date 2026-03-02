@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exhibit A Documentation</title>
+    <meta
+      name="description"
+      content="Exhibit A documentation hub for design, roadmap phases, and epic execution docs."
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <style>
+      :root {
+        color-scheme: light dark;
+
+        --bg-primary: #f2efea;
+        --bg-reading: #f8f1e3;
+        --bg-secondary: #f3ece4;
+        --bg-tertiary: #e7decd;
+
+        --text-primary: #1a1a1a;
+        --text-reading: #2c2118;
+        --text-secondary: #5f4b32;
+        --text-muted: #8c7b6b;
+
+        --accent-primary: #800020;
+        --accent-warm: #a65e46;
+        --accent-soft: #dca1a1;
+        --accent-gold: #cbb674;
+
+        --separator: #d6cfc5;
+        --shadow-elevated: 0 1px 1px rgba(44, 33, 24, 0.06), 0 2px 4px rgba(44, 33, 24, 0.06),
+          0 4px 8px rgba(44, 33, 24, 0.04);
+
+        --sidebar-width: 320px;
+        --content-max-width: 920px;
+        --transition-fast: 180ms ease;
+        --transition-medium: 280ms ease;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg-primary: #1a1614;
+          --bg-reading: #22201c;
+          --bg-secondary: #2a2622;
+          --bg-tertiary: #38322c;
+
+          --text-primary: #e8e4df;
+          --text-reading: #dcd5ca;
+          --text-secondary: #a89882;
+          --text-muted: #a89882;
+
+          --accent-primary: #c4526a;
+          --accent-warm: #c8805e;
+          --accent-soft: #e0b5a8;
+          --accent-gold: #cbb674;
+
+          --separator: #4a433c;
+          --shadow-elevated: 0 1px 1px rgba(0, 0, 0, 0.24), 0 2px 6px rgba(0, 0, 0, 0.28),
+            0 6px 18px rgba(0, 0, 0, 0.22);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text-primary);
+        background:
+          radial-gradient(circle at 80% -10%, rgba(203, 182, 116, 0.14), transparent 42%),
+          radial-gradient(circle at 20% 12%, rgba(166, 94, 70, 0.08), transparent 34%),
+          linear-gradient(180deg, var(--bg-primary), color-mix(in srgb, var(--bg-primary) 72%, var(--bg-secondary) 28%));
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.12;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+        mix-blend-mode: multiply;
+        z-index: 0;
+      }
+
+      .app {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        height: 100dvh;
+        overflow: hidden;
+      }
+
+      .sidebar {
+        width: var(--sidebar-width);
+        height: 100dvh;
+        background: color-mix(in srgb, var(--bg-secondary) 90%, var(--bg-reading) 10%);
+        border-right: 1px solid var(--separator);
+        display: flex;
+        flex-shrink: 0;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: var(--shadow-elevated);
+      }
+
+      .sidebar-top {
+        padding: 22px 20px 18px;
+        border-bottom: 1px solid var(--separator);
+      }
+
+      .kicker {
+        margin: 0;
+        color: var(--accent-warm);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .brand {
+        margin: 8px 0 6px;
+        font-family: "New York", "Iowan Old Style", "Palatino Linotype", serif;
+        font-size: 28px;
+        line-height: 1.15;
+        color: var(--text-primary);
+        letter-spacing: 0.01em;
+      }
+
+      .case-note {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .nav-scroll {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: 12px 12px 22px;
+      }
+
+      .nav-divider {
+        height: 1px;
+        background: var(--separator);
+        margin: 12px 8px;
+      }
+
+      .nav-link,
+      .epic-link,
+      .phase-toggle {
+        width: 100%;
+        text-align: left;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text-secondary);
+        font: inherit;
+        text-decoration: none;
+        display: block;
+        cursor: pointer;
+        transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+      }
+
+      .nav-link {
+        padding: 10px 12px;
+        margin-bottom: 2px;
+        font-size: 14px;
+        font-weight: 550;
+      }
+
+      .nav-link:hover,
+      .phase-toggle:hover,
+      .epic-link:hover {
+        background: color-mix(in srgb, var(--bg-reading) 84%, var(--accent-soft) 16%);
+        color: var(--text-primary);
+      }
+
+      .nav-link.active,
+      .epic-link.active {
+        background: color-mix(in srgb, var(--accent-soft) 16%, var(--bg-reading) 84%);
+        color: var(--accent-primary);
+      }
+
+      .section-label {
+        margin: 12px 12px 8px;
+        font-size: 11px;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .phase-group {
+        margin-bottom: 6px;
+      }
+
+      .phase-toggle {
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .phase-title-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .phase-title {
+        font-size: 13px;
+        font-weight: 620;
+        color: inherit;
+      }
+
+      .phase-meta {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .phase-caret {
+        width: 9px;
+        height: 9px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg);
+        transition: transform var(--transition-medium);
+        margin-right: 4px;
+      }
+
+      .phase-group.open .phase-caret {
+        transform: rotate(-135deg);
+      }
+
+      .phase-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height var(--transition-medium);
+        margin-left: 8px;
+      }
+
+      .phase-content-inner {
+        padding: 4px 0 8px;
+        border-left: 1px solid color-mix(in srgb, var(--separator) 80%, transparent 20%);
+        margin-left: 10px;
+      }
+
+      .epic-link {
+        font-size: 12px;
+        line-height: 1.45;
+        padding: 8px 10px 8px 14px;
+        margin: 0 0 2px 10px;
+      }
+
+      .main {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .mobile-bar {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--separator);
+        background: color-mix(in srgb, var(--bg-secondary) 94%, var(--bg-reading) 6%);
+      }
+
+      .mobile-title {
+        margin: 0;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .menu-btn {
+        border: 1px solid var(--separator);
+        border-radius: 10px;
+        width: 38px;
+        height: 34px;
+        background: var(--bg-reading);
+        color: var(--text-secondary);
+        font-size: 20px;
+        line-height: 1;
+      }
+
+      .content-wrap {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: 40px 28px 64px;
+      }
+
+      .content-inner {
+        margin: 0 auto;
+        width: 100%;
+        max-width: var(--content-max-width);
+      }
+
+      .landing {
+        animation: appear 320ms ease;
+      }
+
+      .hero-panel {
+        background: linear-gradient(
+          160deg,
+          color-mix(in srgb, var(--bg-reading) 87%, var(--bg-secondary) 13%),
+          color-mix(in srgb, var(--bg-secondary) 78%, var(--bg-tertiary) 22%)
+        );
+        border: 1px solid color-mix(in srgb, var(--separator) 75%, transparent 25%);
+        border-radius: 20px;
+        box-shadow: var(--shadow-elevated);
+        padding: clamp(24px, 5vw, 44px);
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, var(--accent-gold) 36%, transparent 64%);
+        background: color-mix(in srgb, var(--bg-reading) 78%, var(--accent-gold) 22%);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent-warm);
+        font-weight: 650;
+      }
+
+      .hero-title {
+        margin: 16px 0 12px;
+        font-family: "New York", "Iowan Old Style", "Palatino Linotype", serif;
+        font-size: clamp(34px, 5vw, 52px);
+        line-height: 1.06;
+        color: var(--text-primary);
+      }
+
+      .hero-summary {
+        margin: 0;
+        max-width: 72ch;
+        color: var(--text-secondary);
+        font-size: 17px;
+        line-height: 1.62;
+      }
+
+      .hero-actions {
+        margin-top: 26px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .cta {
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 11px 16px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .cta.primary {
+        background: var(--accent-primary);
+        color: #f8f1e3;
+      }
+
+      .cta.secondary {
+        background: transparent;
+        border-color: color-mix(in srgb, var(--accent-warm) 35%, transparent 65%);
+        color: var(--accent-warm);
+      }
+
+      .cta:hover {
+        transform: translateY(-1px);
+      }
+
+      .grid {
+        margin-top: 24px;
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 14px;
+      }
+
+      .metric,
+      .guide {
+        border-radius: 16px;
+        border: 1px solid color-mix(in srgb, var(--separator) 80%, transparent 20%);
+        background: color-mix(in srgb, var(--bg-reading) 82%, var(--bg-secondary) 18%);
+        box-shadow: var(--shadow-elevated);
+      }
+
+      .metric {
+        grid-column: span 4;
+        padding: 18px;
+      }
+
+      .metric-label {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        margin: 8px 0 0;
+        font-family: "New York", "Iowan Old Style", "Palatino Linotype", serif;
+        font-size: 30px;
+        color: var(--text-reading);
+      }
+
+      .guide {
+        grid-column: span 6;
+        padding: 18px;
+      }
+
+      .guide h3 {
+        margin: 0;
+        font-family: "New York", "Iowan Old Style", "Palatino Linotype", serif;
+        font-size: 24px;
+        color: var(--text-primary);
+      }
+
+      .guide p {
+        margin: 10px 0 0;
+        color: var(--text-secondary);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .guide-list {
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+
+      .guide-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+
+      .guide-list li::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-top: 7px;
+        background: var(--accent-soft);
+      }
+
+      .markdown-shell {
+        border-radius: 20px;
+        border: 1px solid color-mix(in srgb, var(--separator) 80%, transparent 20%);
+        background: var(--bg-reading);
+        box-shadow: var(--shadow-elevated);
+        padding: clamp(20px, 3vw, 40px);
+        animation: appear 240ms ease;
+      }
+
+      .markdown-body {
+        color: var(--text-reading);
+        font-family: "New York", "Iowan Old Style", "Palatino Linotype", serif;
+        font-size: 18px;
+        line-height: 1.56;
+      }
+
+      .markdown-body :is(h1, h2, h3, h4, h5, h6) {
+        color: var(--text-primary);
+        margin-top: 1.7em;
+        margin-bottom: 0.55em;
+        line-height: 1.2;
+      }
+
+      .markdown-body h1 {
+        margin-top: 0;
+        font-size: clamp(34px, 4vw, 44px);
+        border-bottom: 1px solid var(--separator);
+        padding-bottom: 0.34em;
+      }
+
+      .markdown-body h2 {
+        font-size: clamp(26px, 3vw, 32px);
+      }
+
+      .markdown-body h3 {
+        font-size: clamp(22px, 2.4vw, 26px);
+      }
+
+      .markdown-body p,
+      .markdown-body li {
+        margin-top: 0;
+      }
+
+      .markdown-body p {
+        margin-bottom: 1.1em;
+      }
+
+      .markdown-body a {
+        color: var(--accent-primary);
+        text-decoration: none;
+        border-bottom: 1px solid color-mix(in srgb, var(--accent-primary) 40%, transparent 60%);
+      }
+
+      .markdown-body a:hover {
+        color: var(--accent-warm);
+        border-bottom-color: color-mix(in srgb, var(--accent-warm) 60%, transparent 40%);
+      }
+
+      .markdown-body ul,
+      .markdown-body ol {
+        margin: 0 0 1.2em;
+        padding-left: 1.5em;
+      }
+
+      .markdown-body li {
+        margin-bottom: 0.45em;
+      }
+
+      .markdown-body blockquote {
+        margin: 1.2em 0;
+        border-left: 3px solid color-mix(in srgb, var(--accent-soft) 68%, var(--accent-primary) 32%);
+        padding: 0.3em 0 0.3em 1em;
+        color: var(--text-secondary);
+        font-style: italic;
+        background: color-mix(in srgb, var(--bg-tertiary) 48%, transparent 52%);
+        border-radius: 0 10px 10px 0;
+      }
+
+      .markdown-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.4em 0;
+        border: 1px solid var(--separator);
+        border-radius: 10px;
+        overflow: hidden;
+        display: block;
+        overflow-x: auto;
+      }
+
+      .markdown-body th,
+      .markdown-body td {
+        border: 1px solid var(--separator);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+        font-size: 15px;
+      }
+
+      .markdown-body th {
+        background: color-mix(in srgb, var(--bg-tertiary) 58%, transparent 42%);
+        color: var(--text-primary);
+        font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-weight: 600;
+      }
+
+      .markdown-body code {
+        font-family: "SF Mono", ui-monospace, Menlo, Monaco, monospace;
+        background: color-mix(in srgb, var(--bg-tertiary) 64%, transparent 36%);
+        padding: 0.18em 0.42em;
+        border-radius: 6px;
+        font-size: 0.86em;
+      }
+
+      .markdown-body pre {
+        margin: 1.25em 0;
+        background: #201d1a;
+        border: 1px solid color-mix(in srgb, #3b332c 78%, transparent 22%);
+        border-radius: 12px;
+        padding: 14px;
+        overflow: auto;
+      }
+
+      .markdown-body pre code {
+        background: transparent;
+        padding: 0;
+        color: #e8e4df;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .loading,
+      .error {
+        border-radius: 16px;
+        border: 1px solid color-mix(in srgb, var(--separator) 80%, transparent 20%);
+        box-shadow: var(--shadow-elevated);
+        padding: 18px;
+      }
+
+      .loading {
+        color: var(--text-muted);
+        background: color-mix(in srgb, var(--bg-reading) 80%, var(--bg-secondary) 20%);
+      }
+
+      .error {
+        background: color-mix(in srgb, var(--bg-reading) 88%, var(--accent-soft) 12%);
+      }
+
+      .error h2 {
+        margin: 0 0 8px;
+        font-family: "New York", "Iowan Old Style", "Palatino Linotype", serif;
+        color: var(--accent-primary);
+      }
+
+      .error p {
+        margin: 0 0 10px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      .error code {
+        font-family: "SF Mono", ui-monospace, Menlo, Monaco, monospace;
+        background: color-mix(in srgb, var(--bg-tertiary) 60%, transparent 40%);
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+
+      .overlay {
+        display: none;
+      }
+
+      @keyframes appear {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 1080px) {
+        .guide {
+          grid-column: span 12;
+        }
+
+        .metric {
+          grid-column: span 6;
+        }
+      }
+
+      @media (max-width: 880px) {
+        .sidebar {
+          position: fixed;
+          inset: 0 auto 0 0;
+          z-index: 25;
+          transform: translateX(-100%);
+          transition: transform var(--transition-medium);
+          max-width: 88vw;
+        }
+
+        .sidebar.open {
+          transform: translateX(0);
+        }
+
+        .mobile-bar {
+          display: flex;
+          position: sticky;
+          top: 0;
+          z-index: 15;
+        }
+
+        .overlay {
+          display: block;
+          position: fixed;
+          inset: 0;
+          z-index: 20;
+          background: rgba(0, 0, 0, 0.35);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity var(--transition-medium);
+        }
+
+        .overlay.show {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .content-wrap {
+          padding: 24px 16px 44px;
+        }
+
+        .hero-title {
+          font-size: clamp(30px, 8vw, 40px);
+        }
+
+        .metric {
+          grid-column: span 12;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+        <div class="sidebar-top">
+          <p class="kicker">Exhibit A</p>
+          <h1 class="brand">Documentation Hub</h1>
+          <p class="case-note">Case No. DC-2025-0214 | Design, roadmap, and execution records.</p>
+        </div>
+
+        <nav class="nav-scroll" id="nav-scroll"></nav>
+      </aside>
+
+      <main class="main">
+        <header class="mobile-bar">
+          <p class="mobile-title">Exhibit A Docs</p>
+          <button class="menu-btn" id="menu-btn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button>
+        </header>
+
+        <div class="content-wrap">
+          <div class="content-inner" id="content-area"></div>
+        </div>
+      </main>
+
+      <div class="overlay" id="overlay" aria-hidden="true"></div>
+    </div>
+
+    <script>
+      const topLevelDocs = [
+        { key: "home", label: "Home", type: "home" },
+        { key: "exhibit-a-design-doc.md", label: "Design Doc", type: "doc" },
+        { key: "PHASES.md", label: "Phases", type: "doc" },
+        { key: "exhibit-A-contract.md", label: "Contract Corpus", type: "doc" },
+        { key: "client-proposal.md", label: "Client Proposal", type: "doc" },
+      ];
+
+      const phaseGroups = [
+        {
+          id: "phase-0",
+          label: "Phase 0: Backend Foundation",
+          files: [
+            { path: "PH-0/0-1-backend-scaffold-schema.md", title: "E0.1 Scaffold Backend Runtime and SQLite Schema" },
+            { path: "PH-0/0-2-content-signature-sync-api.md", title: "E0.2 Implement Content, Signature, and Sync APIs" },
+            { path: "PH-0/0-3-auth-deployment-resilience.md", title: "E0.3 Enforce Auth and Production Deployment Controls" },
+          ],
+        },
+        {
+          id: "phase-1",
+          label: "Phase 1: Admin Panel",
+          files: [
+            { path: "PH-1/1-1-admin-routes-session-apns.md", title: "E1.1 Admin Routes, Session Auth, and APNS Push" },
+            { path: "PH-1/1-2-content-templates-admin-styling.md", title: "E1.2 Admin Content Templates and Styling" },
+          ],
+        },
+        {
+          id: "phase-2",
+          label: "Phase 2: iOS Foundation",
+          files: [
+            { path: "PH-2/2-1-xcode-scaffold-build-config.md", title: "E2.1 Xcode Project and Build Configuration" },
+            { path: "PH-2/2-2-design-system-tokens-paper-noise.md", title: "E2.2 Design Tokens and Paper Noise System" },
+            { path: "PH-2/2-3-appstate-router-navigation-shell.md", title: "E2.3 AppState, Router, and Navigation Shell" },
+            { path: "PH-2/2-4-api-client-keychain-content-cache.md", title: "E2.4 API Client, Keychain, and Local Cache" },
+            { path: "PH-2/2-5-shared-foundation-ui-components.md", title: "E2.5 Shared Foundation UI Components" },
+          ],
+        },
+        {
+          id: "phase-3",
+          label: "Phase 3: Home Screen",
+          files: [{ path: "PH-3/3-1-home-screen-filing-cabinet-navigation.md", title: "E3.1 Home Screen Filing Cabinet Navigation" }],
+        },
+        {
+          id: "phase-4",
+          label: "Phase 4: Filed Letters",
+          files: [
+            { path: "PH-4/4-1-letter-list-correspondence-log.md", title: "E4.1 Correspondence Log Letter List" },
+            { path: "PH-4/4-2-letter-detail-markdown-reader.md", title: "E4.2 Letter Detail Markdown Reader" },
+          ],
+        },
+        {
+          id: "phase-5",
+          label: "Phase 5: Sealed Thoughts",
+          files: [
+            { path: "PH-5/5-1-sealed-thoughts-list-view.md", title: "E5.1 Sealed Thoughts List View" },
+            { path: "PH-5/5-2-sealed-thought-detail-view.md", title: "E5.2 Sealed Thought Detail View" },
+          ],
+        },
+        {
+          id: "phase-6",
+          label: "Phase 6: Contract Book and Signatures",
+          files: [
+            { path: "PH-6/6-1-contract-book-page-curl-cover-toc.md", title: "E6.1 Contract Book Page Curl, Cover, and TOC" },
+            { path: "PH-6/6-2-contract-article-pagination-engine.md", title: "E6.2 Contract Article Pagination Engine" },
+            { path: "PH-6/6-3-signature-block-pencilkit-signing-flow.md", title: "E6.3 Signature Block and PencilKit Signing Flow" },
+            {
+              path: "PH-6/6-4-final-page-contract-sequence-integration.md",
+              title: "E6.4 Final Page and Contract Sequence Integration",
+            },
+          ],
+        },
+        {
+          id: "phase-7",
+          label: "Phase 7: Sync, Push, and Offline",
+          files: [
+            { path: "PH-7/7-1-sync-engine-bg-refresh-push-handling.md", title: "E7.1 Sync Engine, Background Refresh, and Push" },
+            { path: "PH-7/7-2-offline-signature-upload-queue.md", title: "E7.2 Offline Signature Upload Queue" },
+          ],
+        },
+        {
+          id: "phase-8",
+          label: "Phase 8: Sound, Haptics, and Animation Polish",
+          files: [
+            { path: "PH-8/8-1-sound-service-settings-toggle.md", title: "E8.1 Sound Service and Settings Toggle" },
+            { path: "PH-8/8-2-haptics-sound-animation-view-wiring.md", title: "E8.2 Haptics, Sounds, and Animation Wiring" },
+          ],
+        },
+      ];
+
+      const totalEpics = phaseGroups.reduce((count, phase) => count + phase.files.length, 0);
+
+      const state = {
+        isSidebarOpen: false,
+      };
+
+      document.addEventListener("DOMContentLoaded", () => {
+        setupMarkdown();
+        renderSidebar();
+        bindUiEvents();
+        routeFromHash();
+      });
+
+      window.addEventListener("hashchange", routeFromHash);
+
+      function setupMarkdown() {
+        marked.setOptions({
+          gfm: true,
+          breaks: false,
+          headerIds: true,
+          mangle: false,
+        });
+      }
+
+      function renderSidebar() {
+        const nav = document.getElementById("nav-scroll");
+        nav.innerHTML = "";
+
+        topLevelDocs.forEach((item) => {
+          const link = document.createElement("a");
+          link.className = "nav-link";
+          link.href = `#${item.key}`;
+          link.textContent = item.label;
+          link.dataset.route = item.key;
+          nav.appendChild(link);
+        });
+
+        const divider = document.createElement("div");
+        divider.className = "nav-divider";
+        nav.appendChild(divider);
+
+        const label = document.createElement("p");
+        label.className = "section-label";
+        label.textContent = "Phase Epics";
+        nav.appendChild(label);
+
+        phaseGroups.forEach((phase) => {
+          const group = document.createElement("section");
+          group.className = "phase-group";
+          group.dataset.phase = phase.id;
+
+          const toggle = document.createElement("button");
+          toggle.className = "phase-toggle";
+          toggle.type = "button";
+          toggle.setAttribute("aria-expanded", "false");
+          toggle.setAttribute("aria-controls", `${phase.id}-content`);
+          toggle.innerHTML = `
+            <span class="phase-title-wrap">
+              <span class="phase-title">${escapeHtml(phase.label)}</span>
+              <span class="phase-meta">${phase.files.length} epic docs</span>
+            </span>
+            <span class="phase-caret" aria-hidden="true"></span>
+          `;
+
+          const content = document.createElement("div");
+          content.className = "phase-content";
+          content.id = `${phase.id}-content`;
+
+          const inner = document.createElement("div");
+          inner.className = "phase-content-inner";
+
+          phase.files.forEach((file) => {
+            const epic = document.createElement("a");
+            epic.className = "epic-link";
+            epic.href = `#${file.path}`;
+            epic.textContent = file.title;
+            epic.dataset.route = file.path;
+            inner.appendChild(epic);
+          });
+
+          content.appendChild(inner);
+          group.appendChild(toggle);
+          group.appendChild(content);
+          nav.appendChild(group);
+
+          toggle.addEventListener("click", () => {
+            const isOpen = group.classList.contains("open");
+            setAccordionState(group, !isOpen);
+          });
+        });
+      }
+
+      function bindUiEvents() {
+        const menuBtn = document.getElementById("menu-btn");
+        const overlay = document.getElementById("overlay");
+
+        menuBtn.addEventListener("click", () => setSidebarOpen(!state.isSidebarOpen));
+        overlay.addEventListener("click", () => setSidebarOpen(false));
+
+        window.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            setSidebarOpen(false);
+          }
+        });
+      }
+
+      function routeFromHash() {
+        const rawHash = window.location.hash.replace(/^#/, "").trim();
+        const route = decodeURIComponent(rawHash || "home");
+
+        if (!route || route === "home") {
+          renderLanding();
+          updateActiveNav("home");
+          setSidebarOpen(false);
+          return;
+        }
+
+        loadMarkdown(route);
+      }
+
+      function renderLanding() {
+        const target = document.getElementById("content-area");
+        target.innerHTML = `
+          <section class="landing">
+            <section class="hero-panel">
+              <span class="hero-badge">Internal Product Documentation</span>
+              <h2 class="hero-title">Exhibit A: The Official Documentation Record</h2>
+              <p class="hero-summary">
+                This hub is the single browsing surface for Exhibit A strategy and delivery docs. Start with the design
+                doc for product meaning and visual doctrine, then move through PHASES and epic files for implementation
+                sequencing and acceptance criteria.
+              </p>
+              <div class="hero-actions">
+                <a class="cta primary" href="#exhibit-a-design-doc.md">Open Design Doc</a>
+                <a class="cta secondary" href="#PHASES.md">Open PHASES</a>
+                <a class="cta secondary" href="#client-proposal.md">Open Client Proposal</a>
+              </div>
+            </section>
+
+            <section class="grid" aria-label="Documentation overview">
+              <article class="metric">
+                <p class="metric-label">Phases</p>
+                <p class="metric-value">${phaseGroups.length}</p>
+              </article>
+              <article class="metric">
+                <p class="metric-label">Epic Documents</p>
+                <p class="metric-value">${totalEpics}</p>
+              </article>
+              <article class="metric">
+                <p class="metric-label">Core Source Docs</p>
+                <p class="metric-value">3</p>
+              </article>
+
+              <article class="guide">
+                <h3>How to navigate this corpus</h3>
+                <ul class="guide-list">
+                  <li>Read <strong>Design Doc</strong> first. It is the source of truth for product intent and visual direction.</li>
+                  <li>Read <strong>PHASES</strong> second for dependency order, entry/exit gates, and epic grouping.</li>
+                  <li>Use the left sidebar accordions to open each phase and load the exact epic markdown file.</li>
+                </ul>
+              </article>
+
+              <article class="guide">
+                <h3>Information architecture</h3>
+                <p>
+                  Home provides orientation. Design Doc and PHASES define the canonical strategy. Phase accordions then
+                  expose epic-level execution specs, each rendered directly from source markdown at runtime.
+                </p>
+              </article>
+            </section>
+          </section>
+        `;
+      }
+
+      async function loadMarkdown(path) {
+        const target = document.getElementById("content-area");
+        target.innerHTML = `<section class="loading">Loading <code>${escapeHtml(path)}</code>...</section>`;
+
+        try {
+          const response = await fetch(path, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`Unable to load ${path} (${response.status})`);
+          }
+
+          const markdownText = await response.text();
+          const rendered = marked.parse(markdownText);
+
+          target.innerHTML = `
+            <section class="markdown-shell">
+              <article class="markdown-body">${rendered}</article>
+            </section>
+          `;
+
+          document.querySelectorAll("pre code").forEach((block) => {
+            hljs.highlightElement(block);
+          });
+
+          updateActiveNav(path);
+        } catch (error) {
+          target.innerHTML = `
+            <section class="error" role="alert">
+              <h2>Document unavailable</h2>
+              <p>${escapeHtml(error.message)}</p>
+              <p>Verify the file path and serve this folder from a static server when browsing locally.</p>
+            </section>
+          `;
+          updateActiveNav(null);
+        } finally {
+          setSidebarOpen(false);
+        }
+      }
+
+      function updateActiveNav(routeKey) {
+        document.querySelectorAll(".nav-link, .epic-link").forEach((item) => {
+          if (routeKey && item.dataset.route === routeKey) {
+            item.classList.add("active");
+          } else {
+            item.classList.remove("active");
+          }
+        });
+      }
+
+      function setAccordionState(group, open) {
+        const content = group.querySelector(".phase-content");
+        const toggle = group.querySelector(".phase-toggle");
+
+        if (open) {
+          group.classList.add("open");
+          content.style.maxHeight = `${content.scrollHeight}px`;
+          toggle.setAttribute("aria-expanded", "true");
+        } else {
+          group.classList.remove("open");
+          content.style.maxHeight = "0px";
+          toggle.setAttribute("aria-expanded", "false");
+        }
+      }
+
+      function setSidebarOpen(open) {
+        state.isSidebarOpen = Boolean(open);
+
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("overlay");
+        const menuBtn = document.getElementById("menu-btn");
+
+        sidebar.classList.toggle("open", state.isSidebarOpen);
+        overlay.classList.toggle("show", state.isSidebarOpen);
+        menuBtn.setAttribute("aria-expanded", String(state.isSidebarOpen));
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+    </script>
+  </body>
+</html>
