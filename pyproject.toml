@@ -30,6 +30,8 @@ show_error_codes = true
 module = [
   "aioapns.*",
   "aiosqlite.*",
+  "bcrypt",
+  "bcrypt.*",
   "structlog.*",
   "pydantic_settings.*",
 ]

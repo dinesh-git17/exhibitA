@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Exhibit A - Clerk's Office{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 1rem; }
+    nav { border-bottom: 1px solid #ccc; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+    nav a { margin-right: 1rem; text-decoration: none; color: #333; }
+    nav a.active { font-weight: bold; border-bottom: 2px solid #333; }
+    .flash { padding: 0.75rem; margin-bottom: 1rem; border-radius: 4px; }
+    .flash-success { background: #d4edda; color: #155724; }
+    .flash-error { background: #f8d7da; color: #721c24; }
+    .flash-warning { background: #fff3cd; color: #856404; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block nav %}{% include "components/nav.html" %}{% endblock %}
+  {% include "components/flash.html" %}
+  {% block content %}{% endblock %}
+</body>
+</html>

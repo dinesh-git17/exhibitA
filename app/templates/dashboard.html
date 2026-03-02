@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Exhibit A - Dashboard{% endblock %}
+{% block content %}
+<h1>Exhibit A -- Clerk's Office</h1>
+
+<section>
+  <h2>Case Summary</h2>
+  <table>
+    <tr><td>Contracts on file:</td><td>{{ contract_count }}</td></tr>
+    <tr><td>Letters filed:</td><td>{{ letter_count }}</td></tr>
+    <tr><td>Memoranda sealed:</td><td>{{ thought_count }}</td></tr>
+    <tr><td>Signatures executed:</td><td>{{ signature_count }} / {{ total_signable }}</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Quick Actions</h2>
+  <a href="/admin/content/new?type=contract">+ File New Contract</a><br>
+  <a href="/admin/content/new?type=letter">+ File New Letter</a><br>
+  <a href="/admin/content/new?type=thought">+ File New Thought</a>
+</section>
+
+<section>
+  <h2>Recent Filings</h2>
+  {% if recent_filings %}
+  <ul>
+    {% for filing in recent_filings %}
+    <li>
+      <strong>{{ filing.type | upper }}</strong>
+      {% if filing.title %} -- {{ filing.title }}{% endif %}
+      <br>
+      <small>Filed: {{ filing.created_at }}</small>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No filings on record.</p>
+  {% endif %}
+</section>
+
+<a href="/admin/content">View All Content</a>
+{% endblock %}
