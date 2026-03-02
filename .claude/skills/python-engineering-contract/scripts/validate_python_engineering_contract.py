@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate a strict Python engineering contract deterministically."""
+# pylint: disable=too-many-lines
 
 from __future__ import annotations
 
@@ -96,6 +97,8 @@ PACKAGE_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 CLASS_RE = re.compile(r"^[A-Z][A-Za-z0-9]+$")
 PYTHON_VERSION_RE = re.compile(r"(\d+)\.(\d+)(?:\.(\d+))?")
 
+DocNode = ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef
+
 
 @dataclass(frozen=True)
 class Violation:
@@ -109,6 +112,7 @@ class Violation:
     snippet: str
 
     def as_dict(self) -> ViolationOutput:
+        """Convert the violation into the contract JSON shape."""
         return {
             "rule_id": self.rule_id,
             "title": self.title,
@@ -119,26 +123,30 @@ class Violation:
         }
 
 
-class SummaryOutput(TypedDict):
-    files_scanned: int
-    rules_checked: int
-    violations: int
-
-
-class ViolationOutput(TypedDict):
-    rule_id: str
-    title: str
-    rejection: str
-    file: str
-    line: int
-    snippet: str
-
-
-class ResultOutput(TypedDict):
-    contract: str
-    verdict: Literal["PASS", "REJECT"]
-    summary: SummaryOutput
-    violations: list[ViolationOutput]
+SummaryOutput = TypedDict(  # noqa: UP013
+    "SummaryOutput",
+    {"files_scanned": int, "rules_checked": int, "violations": int},
+)
+ViolationOutput = TypedDict(  # noqa: UP013
+    "ViolationOutput",
+    {
+        "rule_id": str,
+        "title": str,
+        "rejection": str,
+        "file": str,
+        "line": int,
+        "snippet": str,
+    },
+)
+ResultOutput = TypedDict(  # noqa: UP013
+    "ResultOutput",
+    {
+        "contract": str,
+        "verdict": Literal["PASS", "REJECT"],
+        "summary": SummaryOutput,
+        "violations": list[ViolationOutput],
+    },
+)
 
 
 def _line_snippet(text: str) -> str:
@@ -187,7 +195,7 @@ def _annotation_text(node: ast.expr | None) -> str:
         return ""
     try:
         return ast.unparse(node)
-    except Exception:
+    except (AttributeError, TypeError, ValueError):
         return ""
 
 
@@ -468,24 +476,61 @@ class ContractValidator:
                 "missing Ruff configuration",
             )
 
-        forbidden = [
-            ("black", re.compile(r"\[tool\.black\]|\bblack\b", re.IGNORECASE)),
-            ("flake8", re.compile(r"\[flake8\]|\bflake8\b", re.IGNORECASE)),
-            ("isort", re.compile(r"\[tool\.isort\]|\bisort\b", re.IGNORECASE)),
-        ]
-        for name, pattern in forbidden:
-            for path in self.config_files:
-                for idx, line in enumerate(self._read_lines(path), start=1):
-                    if pattern.search(line):
-                        self._add(
-                            "PEC003",
-                            path,
-                            idx,
-                            f"{name} is forbidden when Ruff replaces lint/format/import sorting.",
-                            _line_snippet(line),
-                        )
+        for path in self.config_files:
+            for idx, line in enumerate(self._read_lines(path), start=1):
+                stripped = line.split("#", 1)[0].strip()
+                if not stripped:
+                    continue
+
+                if re.match(r"^\[tool\.black\]$", stripped, re.IGNORECASE) or re.match(
+                    r"^black(?:\s*[<>=!~].*)?$", stripped, re.IGNORECASE
+                ):
+                    self._add(
+                        "PEC003",
+                        path,
+                        idx,
+                        "black is forbidden when Ruff replaces lint/format/import sorting.",
+                        _line_snippet(line),
+                    )
+
+                if re.match(r"^\[flake8\]$", stripped, re.IGNORECASE) or re.match(
+                    r"^flake8(?:\s*[<>=!~].*)?$", stripped, re.IGNORECASE
+                ):
+                    self._add(
+                        "PEC003",
+                        path,
+                        idx,
+                        "flake8 is forbidden when Ruff replaces lint/format/import sorting.",
+                        _line_snippet(line),
+                    )
+
+                if re.match(r"^\[tool\.isort\]$", stripped, re.IGNORECASE) or re.match(
+                    r"^isort(?:\s*[<>=!~].*)?$", stripped, re.IGNORECASE
+                ):
+                    self._add(
+                        "PEC003",
+                        path,
+                        idx,
+                        "isort is forbidden when Ruff replaces lint/format/import sorting.",
+                        _line_snippet(line),
+                    )
+
+                if (
+                    re.search(r"\b(?:black|flake8|isort)\b", stripped)
+                    and "repo:" in stripped
+                ):
+                    self._add(
+                        "PEC003",
+                        path,
+                        idx,
+                        "Legacy formatting/lint hooks are forbidden when Ruff is canonical.",
+                        _line_snippet(line),
+                    )
 
     def _check_ruff_execution(self) -> None:
+        if not self.python_files:
+            return
+
         binary = shutil.which("ruff")
         if binary is None:
             self._add_project(
@@ -548,6 +593,9 @@ class ContractValidator:
             )
 
     def _check_mypy_execution(self) -> None:
+        if not self.python_files:
+            return
+
         binary = shutil.which("mypy")
         if binary is None:
             self._add_project(
@@ -582,12 +630,12 @@ class ContractValidator:
                 _line_snippet(first),
             )
 
-    def _iter_public_nodes(self, path: Path) -> list[tuple[str, ast.AST]]:
+    def _iter_public_nodes(self, path: Path) -> list[tuple[str, DocNode]]:
         tree = self.ast_cache.get(path)
         if tree is None:
             return []
 
-        output: list[tuple[str, ast.AST]] = [("module", tree)]
+        output: list[tuple[str, DocNode]] = [("module", tree)]
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
                 output.append(("class", node))
@@ -631,11 +679,12 @@ class ContractValidator:
                 doc = ast.get_docstring(node)
                 lineno = getattr(node, "lineno", 1)
                 if not doc:
+                    public_name = getattr(node, "name", "<module>")
                     self._add(
                         "PEC007",
                         path,
                         lineno,
-                        f"Public {kind} '{getattr(node, 'name', '<module>')}' must include a docstring.",
+                        f"Public {kind} '{public_name}' must include a docstring.",
                         getattr(node, "name", ""),
                     )
                     continue
@@ -883,7 +932,10 @@ class ContractValidator:
                                 "PEC016",
                                 path,
                                 child.lineno,
-                                "Hidden side effects through global/nonlocal mutation are forbidden.",
+                                (
+                                    "Hidden side effects through global/nonlocal "
+                                    "mutation are forbidden."
+                                ),
                                 _line_snippet(self._read_lines(path)[child.lineno - 1]),
                             )
 
@@ -895,7 +947,10 @@ class ContractValidator:
                         "PEC016",
                         path,
                         top.lineno,
-                        "Module-level call side effects are forbidden outside explicit entrypoints.",
+                        (
+                            "Module-level call side effects are forbidden outside "
+                            "explicit entrypoints."
+                        ),
                         _line_snippet(self._read_lines(path)[top.lineno - 1]),
                     )
 
@@ -947,7 +1002,10 @@ class ContractValidator:
                         "PEC018",
                         path,
                         node.lineno,
-                        "Error handling must not swallow failures; log context or raise explicitly.",
+                        (
+                            "Error handling must not swallow failures; log context "
+                            "or raise explicitly."
+                        ),
                         _line_snippet(self._read_lines(path)[node.lineno - 1]),
                     )
                 if not has_log:
@@ -1077,7 +1135,10 @@ class ContractValidator:
                                     "PEC023",
                                     path,
                                     node.lineno,
-                                    "Structured logging calls must include contextual keyword fields.",
+                                    (
+                                        "Structured logging calls must include "
+                                        "contextual keyword fields."
+                                    ),
                                     _line_snippet(lines[node.lineno - 1]),
                                 )
 
@@ -1138,6 +1199,7 @@ class ContractValidator:
                     )
 
     def _check_tests(self) -> None:
+        """Validate project layout and anti-overmocking test constraints."""
         has_tests_dir = (self.root / "tests").is_dir()
         has_source_dir = (self.root / "src").is_dir() or any(
             path.name == "__init__.py" for path in self.root.glob("*/__init__.py")
@@ -1145,7 +1207,10 @@ class ContractValidator:
         if not has_tests_dir or not has_source_dir:
             self._add_project(
                 "PEC026",
-                "Expected project structure must include clear source package(s) and a tests/ directory.",
+                (
+                    "Expected project structure must include clear source package(s) "
+                    "and a tests/ directory."
+                ),
                 "expected: src/<package>/... and tests/",
             )
 
@@ -1164,6 +1229,7 @@ class ContractValidator:
                 )
 
     def validate(self) -> ResultOutput:
+        """Run all deterministic rule checks and build the final verdict."""
         if not self.python_files:
             self._add_project(
                 "PEC000",
@@ -1203,6 +1269,7 @@ class ContractValidator:
 
 
 def _print_text(result: ResultOutput) -> None:
+    """Render human-readable contract output."""
     print(f"contract: {result['contract']}")
     print(f"verdict: {result['verdict']}")
     print(
@@ -1216,6 +1283,7 @@ def _print_text(result: ResultOutput) -> None:
 
 
 def main() -> int:
+    """Parse CLI arguments, execute validation, and return process status."""
     parser = argparse.ArgumentParser(
         description="Validate Python engineering contract."
     )
@@ -1223,14 +1291,26 @@ def main() -> int:
         "--root", type=Path, default=Path(), help="Repository root to scan."
     )
     parser.add_argument(
-        "--format", choices=["json", "text"], default="json", help="Output format."
+        "--format",
+        dest="output_format",
+        choices=["json", "text"],
+        default="json",
+        help="Output format.",
     )
-    args = parser.parse_args()
+    parsed = parser.parse_args()
+    args_map = vars(parsed)
 
-    validator = ContractValidator(args.root)
+    root_arg = args_map.get("root", Path())
+    if not isinstance(root_arg, Path):
+        root_arg = Path(root_arg)
+
+    output_raw = args_map.get("output_format", "json")
+    output_format: Literal["json", "text"] = "text" if output_raw == "text" else "json"
+
+    validator = ContractValidator(root_arg)
     result = validator.validate()
 
-    if args.format == "json":
+    if output_format == "json":
         print(json.dumps(result, indent=2))
     else:
         _print_text(result)
