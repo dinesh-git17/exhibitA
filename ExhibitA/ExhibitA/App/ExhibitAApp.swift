@@ -14,12 +14,15 @@ struct ExhibitAApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack(path: $router.path) {
-                Theme.Colors.Background.primary
-                    .ignoresSafeArea()
+                HomeView()
                     .navigationDestination(for: Router.Route.self) { route in
                         switch route {
                         case .contractBook:
                             Text("Contract Book")
+                        case .lettersList:
+                            Text("Letters")
+                        case .thoughtsList:
+                            Text("Thoughts")
                         case let .letterDetail(id):
                             Text("Letter \(id)")
                         case let .thoughtDetail(id):

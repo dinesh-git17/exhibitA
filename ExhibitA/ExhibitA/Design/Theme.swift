@@ -153,6 +153,12 @@ enum Theme {
         static var pageNumber: Font {
             .system(size: 12, weight: .regular)
         }
+
+        /// New York Small Regular Italic 13pt -- footer legal text
+        static var footerLegal: Font {
+            .system(size: 13, weight: .regular, design: .serif)
+                .italic()
+        }
     }
 
     // MARK: - Line Height (Design Doc S6.3)

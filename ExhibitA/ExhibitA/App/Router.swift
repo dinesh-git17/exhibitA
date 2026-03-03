@@ -7,6 +7,8 @@ import SwiftUI
 
     enum Route: Hashable {
         case contractBook
+        case lettersList
+        case thoughtsList
         case letterDetail(id: String)
         case thoughtDetail(id: String)
     }
