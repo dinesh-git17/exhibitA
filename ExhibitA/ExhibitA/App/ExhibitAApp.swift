@@ -3,14 +3,31 @@ import UIKit
 
 @main
 struct ExhibitAApp: App {
+    @State private var appState = AppState()
+    @State private var router = Router()
+
     init() {
         Self.suppressLiquidGlass()
     }
 
     var body: some Scene {
         WindowGroup {
-            Theme.Colors.Background.primary
-                .ignoresSafeArea()
+            NavigationStack(path: $router.path) {
+                Theme.Colors.Background.primary
+                    .ignoresSafeArea()
+                    .navigationDestination(for: Router.Route.self) { route in
+                        switch route {
+                        case .contractBook:
+                            Text("Contract Book")
+                        case let .letterDetail(id):
+                            Text("Letter \(id)")
+                        case let .thoughtDetail(id):
+                            Text("Thought \(id)")
+                        }
+                    }
+            }
+            .environment(appState)
+            .environment(router)
         }
     }
 
