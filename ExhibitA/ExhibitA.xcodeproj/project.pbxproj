@@ -14,6 +14,11 @@
 		EA25F5721DCDE7F02F969A64 /* ExhibitAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666EFF365F9200946EFB7A9B /* ExhibitAApp.swift */; };
 		C1A2B3C4D5E6F7081920A1B2 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4E8B2C1D7F93065E1C4A892 /* Theme.swift */; };
 		D2B3C4D5E6F70819A0B1C2D3 /* PaperNoise.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F1C3D2E8A04176F2D5B9A3 /* PaperNoise.swift */; };
+		F6A7B8C9D0E1F2A3B4C5D6E7 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* APIModels.swift */; };
+		A7B8C9D0E1F2A3B4C5D6E7F8 /* ExhibitAClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* ExhibitAClient.swift */; };
+		B8C9D0E1F2A3B4C5D6E7F8A9 /* ContentCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* ContentCache.swift */; };
+		C9D0E1F2A3B4C5D6E7F8A9B0 /* SignatureCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* SignatureCache.swift */; };
+		D0E1F2A3B4C5D6E7F8A9B0C1 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0E1F2A3B4C5D6 /* KeychainService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +33,11 @@
 		D4B5493F9FB3B39633135AFB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A4E8B2C1D7F93065E1C4A892 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		B7F1C3D2E8A04176F2D5B9A3 /* PaperNoise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperNoise.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* ExhibitAClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExhibitAClient.swift; sourceTree = "<group>"; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* ContentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentCache.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C5 /* SignatureCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureCache.swift; sourceTree = "<group>"; };
+		E5F6A7B8C9D0E1F2A3B4C5D6 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,10 +61,39 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		E1F2A3B4C5D6E7F8A9B0C1D2 /* API */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* APIModels.swift */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* ExhibitAClient.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
+		F2A3B4C5D6E7F8A9B0C1D2E3 /* Cache */ = {
+			isa = PBXGroup;
+			children = (
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* ContentCache.swift */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* SignatureCache.swift */,
+			);
+			path = Cache;
+			sourceTree = "<group>";
+		};
+		A3B4C5D6E7F8A9B0C1D2E3F4 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				E5F6A7B8C9D0E1F2A3B4C5D6 /* KeychainService.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
 		6DDFFDB2212145943CC355F7 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				E1F2A3B4C5D6E7F8A9B0C1D2 /* API */,
+				F2A3B4C5D6E7F8A9B0C1D2E3 /* Cache */,
 				64230B9304007CA247B886F0 /* Config.swift */,
+				A3B4C5D6E7F8A9B0C1D2E3F4 /* Security */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -189,6 +228,11 @@
 				6C5BE2232629F356326BE70D /* Config.swift in Sources */,
 				C1A2B3C4D5E6F7081920A1B2 /* Theme.swift in Sources */,
 				D2B3C4D5E6F70819A0B1C2D3 /* PaperNoise.swift in Sources */,
+				F6A7B8C9D0E1F2A3B4C5D6E7 /* APIModels.swift in Sources */,
+				A7B8C9D0E1F2A3B4C5D6E7F8 /* ExhibitAClient.swift in Sources */,
+				B8C9D0E1F2A3B4C5D6E7F8A9 /* ContentCache.swift in Sources */,
+				C9D0E1F2A3B4C5D6E7F8A9B0 /* SignatureCache.swift in Sources */,
+				D0E1F2A3B4C5D6E7F8A9B0C1 /* KeychainService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

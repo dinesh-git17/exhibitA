@@ -7,6 +7,7 @@ struct ExhibitAApp: App {
     @State private var router = Router()
 
     init() {
+        KeychainService.seedAPIKeyIfNeeded(Config.apiKey)
         Self.suppressLiquidGlass()
     }
 
