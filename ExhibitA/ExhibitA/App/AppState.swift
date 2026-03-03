@@ -9,6 +9,10 @@ import Foundation
         didSet { defaults.set(lastSyncAt, forKey: StorageKey.lastSyncAt) }
     }
 
+    // MARK: - Content
+
+    private(set) var cachedContent: [ContentItem] = []
+
     // MARK: - Unread Tracking
 
     private(set) var seenContentIDs: Set<String> = [] {
@@ -33,6 +37,10 @@ import Foundation
 
     func markSeen(_ contentID: String) {
         seenContentIDs.insert(contentID)
+    }
+
+    func updateCachedContent(_ items: [ContentItem]) {
+        cachedContent = items
     }
 
     // MARK: - Persistence Helpers
