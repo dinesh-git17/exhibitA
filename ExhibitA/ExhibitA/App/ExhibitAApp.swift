@@ -20,7 +20,7 @@ struct ExhibitAApp: App {
                         case .contractBook:
                             Text("Contract Book")
                         case .lettersList:
-                            Text("Letters")
+                            LetterListView()
                         case .thoughtsList:
                             Text("Thoughts")
                         case let .letterDetail(id):
