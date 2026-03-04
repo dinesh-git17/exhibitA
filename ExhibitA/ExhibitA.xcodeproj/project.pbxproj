@@ -26,6 +26,7 @@
 		F2B3C4D5E6F70819A0B1C2D3 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6F7089A0B1C2D /* HomeView.swift */; };
 		A2B3C4D5E6F70819A0B1C2D4 /* LetterListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7089A0B1C2E /* LetterListView.swift */; };
 		B2B3C4D5E6F70819A0B1C2D5 /* LetterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4D5E6F7089A0B1C2F /* LetterDetailView.swift */; };
+		B1C2D3E4F5A60819B0C1D2E3 /* ThoughtListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D2 /* ThoughtListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +53,7 @@
 		E1A2B3C4D5E6F7089A0B1C2D /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7089A0B1C2E /* LetterListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterListView.swift; sourceTree = "<group>"; };
 		D1A2B3C4D5E6F7089A0B1C2F /* LetterDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterDetailView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718A9B0C1D2 /* ThoughtListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThoughtListView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +130,7 @@
 			children = (
 				B1C2D3E4F5A6B7C8D9E0F1A2 /* Home */,
 				C2D3E4F5A6B7C8D9E0F1A2B3 /* Letters */,
+				D3E4F5A6B7C8D9E0F1A2B3C4 /* Thoughts */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -139,6 +142,14 @@
 				F1A2B3C4D5E6F7089A0B1C2E /* LetterListView.swift */,
 			);
 			path = Letters;
+			sourceTree = "<group>";
+		};
+		D3E4F5A6B7C8D9E0F1A2B3C4 /* Thoughts */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718A9B0C1D2 /* ThoughtListView.swift */,
+			);
+			path = Thoughts;
 			sourceTree = "<group>";
 		};
 		B1C2D3E4F5A6B7C8D9E0F1A2 /* Home */ = {
@@ -293,6 +304,7 @@
 				F2B3C4D5E6F70819A0B1C2D3 /* HomeView.swift in Sources */,
 				A2B3C4D5E6F70819A0B1C2D4 /* LetterListView.swift in Sources */,
 				B2B3C4D5E6F70819A0B1C2D5 /* LetterDetailView.swift in Sources */,
+				B1C2D3E4F5A60819B0C1D2E3 /* ThoughtListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
