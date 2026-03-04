@@ -18,7 +18,7 @@ struct ExhibitAApp: App {
                     .navigationDestination(for: Router.Route.self) { route in
                         switch route {
                         case .contractBook:
-                            Text("Contract Book")
+                            ContractBookView()
                         case .lettersList:
                             LetterListView()
                         case .thoughtsList:
