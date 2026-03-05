@@ -5,14 +5,19 @@ struct SignatureBlockView: View {
     let contentId: String
 
     @Environment(AppState.self) private var appState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showSignaturePad = false
     @State private var activeSigner: String?
     @State private var cachedImages: [String: UIImage] = [:]
+    @State private var hasPerformedInitialLoad = false
 
     private static let signers: [(name: String, role: String, id: String)] = [
         (name: "Dinesh Dawonauth", role: "The Boyfriend", id: "dinesh"),
         (name: "Carolina Lombardo", role: "The Girlfriend", id: "carolina"),
     ]
+
+    private static let revealDuration: TimeInterval = 0.5
+    private static let revealScale: CGFloat = 0.95
 
     var body: some View {
         VStack(spacing: 0) {
@@ -79,6 +84,9 @@ struct SignatureBlockView: View {
                     .scaledToFit()
                     .frame(height: 60)
                     .rotationEffect(signatureRotation(for: signer.id))
+                    .transition(
+                        .opacity.combined(with: .scale(scale: Self.revealScale))
+                    )
                     .accessibilityHidden(true)
             }
 
@@ -196,12 +204,35 @@ struct SignatureBlockView: View {
 
     private func loadCachedImages() async {
         let cache = SignatureCache()
+        var newImages: [String: UIImage] = [:]
+
         for signer in Self.signers {
-            guard appState.isSigned(contentId: contentId, signer: signer.id) else { continue }
+            guard appState.isSigned(contentId: contentId, signer: signer.id),
+                  cachedImages[signer.id] == nil
+            else { continue }
+
             if let data = await cache.load(contentId: contentId, signer: signer.id),
                let image = UIImage(data: data) {
-                cachedImages[signer.id] = image
+                newImages[signer.id] = image
             }
+        }
+
+        guard !newImages.isEmpty else { return }
+
+        if hasPerformedInitialLoad {
+            let revealAnimation: Animation? = reduceMotion
+                ? nil
+                : .easeInOut(duration: Self.revealDuration)
+            withAnimation(revealAnimation) {
+                for (id, image) in newImages {
+                    cachedImages[id] = image
+                }
+            }
+        } else {
+            for (id, image) in newImages {
+                cachedImages[id] = image
+            }
+            hasPerformedInitialLoad = true
         }
     }
 }
