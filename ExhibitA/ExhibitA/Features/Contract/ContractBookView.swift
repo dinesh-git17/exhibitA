@@ -170,6 +170,11 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             controllers.append(toc)
             controllers.append(contentsOf: articleControllers)
 
+            let finalPage = UIHostingController(
+                rootView: FinalPageView()
+            )
+            controllers.append(finalPage)
+
             let readingBg = UIColor(named: "BackgroundReading") ?? .clear
             for controller in controllers {
                 controller.view.backgroundColor = readingBg
