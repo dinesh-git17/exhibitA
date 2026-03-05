@@ -36,6 +36,7 @@
 		CF4FDE6E517E494CB9CFD937 /* SignaturePadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */; };
 		CA55920C300D449FB8C6E937 /* FinalPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F780326BD331403D8965AE9E /* FinalPageView.swift */; };
 		C6D7E8F9A0B1C2D3E4F5A6B7 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C6D7E8F9A0B1C2D3E4F5A6 /* SyncService.swift */; };
+		E7F8A9B0C1D2E3F4A5B6C7D8 /* UploadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* UploadQueue.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +73,7 @@
 		2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignaturePadView.swift; sourceTree = "<group>"; };
 		F780326BD331403D8965AE9E /* FinalPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalPageView.swift; sourceTree = "<group>"; };
 		B5C6D7E8F9A0B1C2D3E4F5A6 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		F8A9B0C1D2E3F4A5B6C7D8E9 /* UploadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadQueue.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* ExhibitA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ExhibitA.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -138,6 +140,7 @@
 			isa = PBXGroup;
 			children = (
 				B5C6D7E8F9A0B1C2D3E4F5A6 /* SyncService.swift */,
+				F8A9B0C1D2E3F4A5B6C7D8E9 /* UploadQueue.swift */,
 			);
 			path = Sync;
 			sourceTree = "<group>";
@@ -359,6 +362,7 @@
 				CF4FDE6E517E494CB9CFD937 /* SignaturePadView.swift in Sources */,
 				CA55920C300D449FB8C6E937 /* FinalPageView.swift in Sources */,
 				C6D7E8F9A0B1C2D3E4F5A6B7 /* SyncService.swift in Sources */,
+				E7F8A9B0C1D2E3F4A5B6C7D8 /* UploadQueue.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

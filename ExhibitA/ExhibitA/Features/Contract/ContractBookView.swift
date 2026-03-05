@@ -4,6 +4,7 @@ import UIKit
 struct ContractBookView: View {
     @Environment(AppState.self) private var appState
     @Environment(Router.self) private var router
+    @Environment(UploadQueue.self) private var uploadQueue: UploadQueue?
 
     private var articles: [ContentItem] {
         appState.cachedContent
@@ -20,7 +21,8 @@ struct ContractBookView: View {
             articles: articles,
             filedDate: filedDate,
             onBack: { router.pop() },
-            appState: appState
+            appState: appState,
+            uploadQueue: uploadQueue
         )
         .ignoresSafeArea()
         .navigationBarBackButtonHidden()
@@ -35,6 +37,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
     let filedDate: Date?
     let onBack: () -> Void
     let appState: AppState
+    let uploadQueue: UploadQueue?
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -65,7 +68,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             articles: articles,
             filedDate: filedDate,
             onBack: onBack,
-            appState: appState
+            appState: appState,
+            uploadQueue: uploadQueue
         )
 
         if let first = coordinator.controller(at: 0) {
@@ -91,7 +95,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             articles: articles,
             filedDate: filedDate,
             onBack: onBack,
-            appState: appState
+            appState: appState,
+            uploadQueue: uploadQueue
         )
         let safeIndex = min(
             coordinator.currentIndex,
@@ -127,14 +132,16 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             articles: [ContentItem],
             filedDate: Date?,
             onBack: @escaping () -> Void,
-            appState: AppState
+            appState: AppState,
+            uploadQueue: UploadQueue?
         ) {
             articleIDs = articles.map(\.id)
             controllers = []
 
-            let cover = UIHostingController(
-                rootView: CoverPageView(filedDate: filedDate, onBack: onBack)
-                    .environment(appState)
+            let cover = hosting(
+                CoverPageView(filedDate: filedDate, onBack: onBack),
+                appState: appState,
+                uploadQueue: uploadQueue
             )
             controllers.append(cover)
 
@@ -150,22 +157,24 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                     metrics: metrics
                 )
                 for page in pages {
-                    let vc = UIHostingController(
-                        rootView: ContractPageView(page: page)
-                            .environment(appState)
+                    let vc = hosting(
+                        ContractPageView(page: page),
+                        appState: appState,
+                        uploadQueue: uploadQueue
                     )
                     articleControllers.append(vc)
                 }
             }
 
-            let toc = UIHostingController(
-                rootView: TOCPageView(
+            let toc = hosting(
+                TOCPageView(
                     articles: articles,
                     articlePageIndices: articleStartIndices
                 ) { [weak self] pageIndex in
                     self?.jumpTo(pageIndex)
-                }
-                .environment(appState)
+                },
+                appState: appState,
+                uploadQueue: uploadQueue
             )
             controllers.append(toc)
             controllers.append(contentsOf: articleControllers)
@@ -205,6 +214,26 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                 direction: direction,
                 animated: true
             )
+        }
+
+        // MARK: Environment Injection
+
+        private func hosting<V: View>(
+            _ view: V,
+            appState: AppState,
+            uploadQueue: UploadQueue?
+        ) -> UIViewController {
+            if let uploadQueue {
+                return UIHostingController(
+                    rootView: view
+                        .environment(appState)
+                        .environment(uploadQueue)
+                )
+            } else {
+                return UIHostingController(
+                    rootView: view.environment(appState)
+                )
+            }
         }
 
         // MARK: Data Source
