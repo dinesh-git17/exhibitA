@@ -19,6 +19,12 @@ import Foundation
         didSet { persistSeenContentIDs() }
     }
 
+    // MARK: - Signature State
+
+    private(set) var signedSignatures: [String: Date] = [:] {
+        didSet { persistSignedSignatures() }
+    }
+
     // MARK: - Initialization
 
     private let defaults: UserDefaults
@@ -27,6 +33,7 @@ import Foundation
         self.defaults = defaults
         lastSyncAt = defaults.object(forKey: StorageKey.lastSyncAt) as? Date
         seenContentIDs = Self.loadSeenContentIDs(from: defaults)
+        signedSignatures = Self.loadSignedSignatures(from: defaults)
     }
 
     // MARK: - Unread API
@@ -41,6 +48,24 @@ import Foundation
 
     func updateCachedContent(_ items: [ContentItem]) {
         cachedContent = items
+    }
+
+    // MARK: - Signature API
+
+    func isSigned(contentId: String, signer: String) -> Bool {
+        signedSignatures[signatureKey(contentId: contentId, signer: signer)] != nil
+    }
+
+    func signedDate(contentId: String, signer: String) -> Date? {
+        signedSignatures[signatureKey(contentId: contentId, signer: signer)]
+    }
+
+    func markSigned(contentId: String, signer: String, at date: Date) {
+        signedSignatures[signatureKey(contentId: contentId, signer: signer)] = date
+    }
+
+    private func signatureKey(contentId: String, signer: String) -> String {
+        "\(contentId)_\(signer)"
     }
 
     // MARK: - Persistence Helpers
@@ -58,9 +83,24 @@ import Foundation
         }
         return decoded
     }
+
+    private func persistSignedSignatures() {
+        guard let data = try? JSONEncoder().encode(signedSignatures) else { return }
+        defaults.set(data, forKey: StorageKey.signedSignatures)
+    }
+
+    private static func loadSignedSignatures(from defaults: UserDefaults) -> [String: Date] {
+        guard let data = defaults.data(forKey: StorageKey.signedSignatures),
+              let decoded = try? JSONDecoder().decode([String: Date].self, from: data)
+        else {
+            return [:]
+        }
+        return decoded
+    }
 }
 
 private enum StorageKey {
     static let lastSyncAt = "exhibit_a_last_sync_at"
     static let seenContentIDs = "exhibit_a_seen_content_ids"
+    static let signedSignatures = "exhibit_a_signed_signatures"
 }

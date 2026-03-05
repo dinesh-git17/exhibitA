@@ -19,7 +19,8 @@ struct ContractBookView: View {
         PageCurlContainer(
             articles: articles,
             filedDate: filedDate,
-            onBack: { router.pop() }
+            onBack: { router.pop() },
+            appState: appState
         )
         .ignoresSafeArea()
         .navigationBarBackButtonHidden()
@@ -33,6 +34,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
     let articles: [ContentItem]
     let filedDate: Date?
     let onBack: () -> Void
+    let appState: AppState
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -62,7 +64,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         coordinator.rebuild(
             articles: articles,
             filedDate: filedDate,
-            onBack: onBack
+            onBack: onBack,
+            appState: appState
         )
 
         if let first = coordinator.controller(at: 0) {
@@ -87,7 +90,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         coordinator.rebuild(
             articles: articles,
             filedDate: filedDate,
-            onBack: onBack
+            onBack: onBack,
+            appState: appState
         )
         let safeIndex = min(
             coordinator.currentIndex,
@@ -122,13 +126,15 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         func rebuild(
             articles: [ContentItem],
             filedDate: Date?,
-            onBack: @escaping () -> Void
+            onBack: @escaping () -> Void,
+            appState: AppState
         ) {
             articleIDs = articles.map(\.id)
             controllers = []
 
             let cover = UIHostingController(
                 rootView: CoverPageView(filedDate: filedDate, onBack: onBack)
+                    .environment(appState)
             )
             controllers.append(cover)
 
@@ -146,6 +152,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                 for page in pages {
                     let vc = UIHostingController(
                         rootView: ContractPageView(page: page)
+                            .environment(appState)
                     )
                     articleControllers.append(vc)
                 }
@@ -158,6 +165,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                 ) { [weak self] pageIndex in
                     self?.jumpTo(pageIndex)
                 }
+                .environment(appState)
             )
             controllers.append(toc)
             controllers.append(contentsOf: articleControllers)
