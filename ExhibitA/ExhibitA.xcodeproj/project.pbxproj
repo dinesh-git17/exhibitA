@@ -37,6 +37,8 @@
 		CA55920C300D449FB8C6E937 /* FinalPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F780326BD331403D8965AE9E /* FinalPageView.swift */; };
 		C6D7E8F9A0B1C2D3E4F5A6B7 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C6D7E8F9A0B1C2D3E4F5A6 /* SyncService.swift */; };
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* UploadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* UploadQueue.swift */; };
+		8B2C3D4E5F6A7B9C0D1E2F3B /* SoundService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B2C3D4E5F6A8B9C0D1E2A /* SoundService.swift */; };
+		0D4E5F6A7B8C9D1E2F3A4B5D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C3D4E5F6A7B8C0D1E2F3A4C /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +77,8 @@
 		B5C6D7E8F9A0B1C2D3E4F5A6 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
 		F8A9B0C1D2E3F4A5B6C7D8E9 /* UploadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadQueue.swift; sourceTree = "<group>"; };
 		D6E7F8A9B0C1D2E3F4A5B6C7 /* ExhibitA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ExhibitA.entitlements; sourceTree = "<group>"; };
+		7A1B2C3D4E5F6A8B9C0D1E2A /* SoundService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundService.swift; sourceTree = "<group>"; };
+		9C3D4E5F6A7B8C0D1E2F3A4C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,6 +135,7 @@
 				F2A3B4C5D6E7F8A9B0C1D2E3 /* Cache */,
 				64230B9304007CA247B886F0 /* Config.swift */,
 				A3B4C5D6E7F8A9B0C1D2E3F4 /* Security */,
+				7A1B2C3D4E5F6A8B9C0D1E2A /* SoundService.swift */,
 				A4B5C6D7E8F9A0B1C2D3E4F5 /* Sync */,
 			);
 			path = Core;
@@ -203,6 +208,7 @@
 			isa = PBXGroup;
 			children = (
 				E1A2B3C4D5E6F7089A0B1C2D /* HomeView.swift */,
+				9C3D4E5F6A7B8C0D1E2F3A4C /* SettingsView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -363,6 +369,8 @@
 				CA55920C300D449FB8C6E937 /* FinalPageView.swift in Sources */,
 				C6D7E8F9A0B1C2D3E4F5A6B7 /* SyncService.swift in Sources */,
 				E7F8A9B0C1D2E3F4A5B6C7D8 /* UploadQueue.swift in Sources */,
+				8B2C3D4E5F6A7B9C0D1E2F3B /* SoundService.swift in Sources */,
+				0D4E5F6A7B8C9D1E2F3A4B5D /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
