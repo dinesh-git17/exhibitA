@@ -6,8 +6,7 @@ struct SignatureBlockView: View {
 
     @Environment(AppState.self) private var appState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showSignaturePad = false
-    @State private var activeSigner: String?
+    @State private var activeSigner: SignerIdentifier?
     @State private var cachedImages: [String: UIImage] = [:]
     @State private var hasPerformedInitialLoad = false
 
@@ -35,19 +34,17 @@ struct SignatureBlockView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .sheet(isPresented: $showSignaturePad) {
-            if let signer = activeSigner {
-                SignaturePadView(
-                    contentId: contentId,
-                    signer: signer,
-                    onSigned: { date in
-                        appState.markSigned(contentId: contentId, signer: signer, at: date)
-                    }
-                )
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.hidden)
-                .interactiveDismissDisabled()
-            }
+        .sheet(item: $activeSigner) { signer in
+            SignaturePadView(
+                contentId: contentId,
+                signer: signer.id,
+                onSigned: { date in
+                    appState.markSigned(contentId: contentId, signer: signer.id, at: date)
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+            .interactiveDismissDisabled()
         }
         .task(id: signatureStateKey) {
             await loadCachedImages()
@@ -117,8 +114,7 @@ struct SignatureBlockView: View {
         signer: (name: String, role: String, id: String)
     ) -> some View {
         Button {
-            activeSigner = signer.id
-            showSignaturePad = true
+            activeSigner = SignerIdentifier(id: signer.id)
         } label: {
             VStack(spacing: Theme.Spacing.xs) {
                 dottedRule
@@ -235,6 +231,12 @@ struct SignatureBlockView: View {
             hasPerformedInitialLoad = true
         }
     }
+}
+
+// MARK: - Signer Identifier
+
+private struct SignerIdentifier: Identifiable {
+    let id: String
 }
 
 // MARK: - Dotted Line Shape

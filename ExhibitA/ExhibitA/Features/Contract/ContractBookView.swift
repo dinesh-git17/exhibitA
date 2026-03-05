@@ -1,3 +1,4 @@
+import os
 import SwiftUI
 import UIKit
 
@@ -6,6 +7,7 @@ struct ContractBookView: View {
     @Environment(Router.self) private var router
     @Environment(UploadQueue.self) private var uploadQueue: UploadQueue?
     @Environment(SoundService.self) private var soundService: SoundService?
+    @State private var showBackButton = true
 
     private var articles: [ContentItem] {
         appState.cachedContent
@@ -18,17 +20,40 @@ struct ContractBookView: View {
     }
 
     var body: some View {
-        PageCurlContainer(
-            articles: articles,
-            filedDate: filedDate,
-            onBack: { router.pop() },
-            appState: appState,
-            uploadQueue: uploadQueue,
-            soundService: soundService
-        )
-        .ignoresSafeArea()
+        ZStack(alignment: .topLeading) {
+            PageCurlContainer(
+                articles: articles,
+                filedDate: filedDate,
+                showBackButton: $showBackButton,
+                appState: appState,
+                uploadQueue: uploadQueue,
+                soundService: soundService
+            )
+            .ignoresSafeArea()
+
+            if showBackButton {
+                backButton
+            }
+        }
+        .background {
+            Theme.Colors.Background.reading.ignoresSafeArea()
+        }
+        .paperNoise()
         .navigationBarBackButtonHidden()
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var backButton: some View {
+        Button { router.pop() } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.Colors.Text.secondary)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .padding(.top, Theme.Spacing.md)
+        .padding(.leading, Theme.Spacing.md)
+        .accessibilityLabel("Back")
     }
 }
 
@@ -37,7 +62,7 @@ struct ContractBookView: View {
 private struct PageCurlContainer: UIViewControllerRepresentable {
     let articles: [ContentItem]
     let filedDate: Date?
-    let onBack: () -> Void
+    @Binding var showBackButton: Bool
     let appState: AppState
     let uploadQueue: UploadQueue?
     let soundService: SoundService?
@@ -68,10 +93,12 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         let coordinator = context.coordinator
         coordinator.pageViewController = pvc
         coordinator.soundService = soundService
+        coordinator.onPageChange = { [self] index in
+            showBackButton = index == 0 || coordinator.articleFirstPageIndices.contains(index)
+        }
         coordinator.rebuild(
             articles: articles,
             filedDate: filedDate,
-            onBack: onBack,
             appState: appState,
             uploadQueue: uploadQueue,
             soundService: soundService
@@ -100,7 +127,6 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         coordinator.rebuild(
             articles: articles,
             filedDate: filedDate,
-            onBack: onBack,
             appState: appState,
             uploadQueue: uploadQueue,
             soundService: soundService
@@ -126,10 +152,13 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         UIPageViewControllerDataSource,
         UIPageViewControllerDelegate
     {
+        private let logger = Logger(subsystem: "dev.dineshd.exhibita", category: "contract-book")
         weak var pageViewController: UIPageViewController?
         var currentIndex = 0
         var soundService: SoundService?
+        var onPageChange: ((Int) -> Void)?
         private(set) var articleIDs: [String] = []
+        private(set) var articleFirstPageIndices: Set<Int> = []
         private var controllers: [UIViewController] = []
 
         var pageCount: Int { controllers.count }
@@ -139,16 +168,16 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         func rebuild(
             articles: [ContentItem],
             filedDate: Date?,
-            onBack: @escaping () -> Void,
             appState: AppState,
             uploadQueue: UploadQueue?,
             soundService: SoundService?
         ) {
             articleIDs = articles.map(\.id)
+            articleFirstPageIndices = []
             controllers = []
 
             let cover = hosting(
-                CoverPageView(filedDate: filedDate, onBack: onBack),
+                CoverPageView(filedDate: filedDate),
                 appState: appState,
                 uploadQueue: uploadQueue,
                 soundService: soundService
@@ -189,11 +218,14 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                 soundService: soundService
             )
             controllers.append(toc)
+            articleFirstPageIndices = Set(articleStartIndices)
+            logger.debug("Article first page indices: \(articleStartIndices)")
             controllers.append(contentsOf: articleControllers)
 
             let finalPage = UIHostingController(
                 rootView: FinalPageView()
             )
+            finalPage.safeAreaRegions = []
             controllers.append(finalPage)
 
             let readingBg = UIColor(named: "BackgroundReading") ?? .clear
@@ -221,6 +253,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             let direction: UIPageViewController.NavigationDirection =
                 index > currentIndex ? .forward : .reverse
             currentIndex = index
+            onPageChange?(index)
             pvc.setViewControllers(
                 [controllers[index]],
                 direction: direction,
@@ -238,28 +271,36 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         ) -> UIViewController {
             switch (uploadQueue, soundService) {
             case let (uq?, ss?):
-                return UIHostingController(
+                let hc = UIHostingController(
                     rootView: view
                         .environment(appState)
                         .environment(uq)
                         .environment(ss)
                 )
+                hc.safeAreaRegions = []
+                return hc
             case let (uq?, nil):
-                return UIHostingController(
+                let hc = UIHostingController(
                     rootView: view
                         .environment(appState)
                         .environment(uq)
                 )
+                hc.safeAreaRegions = []
+                return hc
             case let (nil, ss?):
-                return UIHostingController(
+                let hc = UIHostingController(
                     rootView: view
                         .environment(appState)
                         .environment(ss)
                 )
+                hc.safeAreaRegions = []
+                return hc
             case (nil, nil):
-                return UIHostingController(
+                let hc = UIHostingController(
                     rootView: view.environment(appState)
                 )
+                hc.safeAreaRegions = []
+                return hc
             }
         }
 
@@ -298,6 +339,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                   let index = controllers.firstIndex(of: visible)
             else { return }
             currentIndex = index
+            logger.debug("Page changed to \(index), firstPages: \(self.articleFirstPageIndices)")
+            onPageChange?(index)
             soundService?.play(.pageTurn)
         }
     }

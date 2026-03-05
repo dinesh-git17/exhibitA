@@ -14,8 +14,7 @@ struct LetterDetailView: View {
                 readerContent(letter)
             }
         }
-        .background(Theme.Colors.Background.reading, ignoresSafeAreaEdges: .all)
-        .paperNoise()
+        .background(Theme.Colors.Background.primary, ignoresSafeAreaEdges: .all)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { markAsRead() }
     }

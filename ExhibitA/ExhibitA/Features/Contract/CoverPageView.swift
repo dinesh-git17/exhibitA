@@ -2,34 +2,14 @@ import SwiftUI
 
 struct CoverPageView: View {
     let filedDate: Date?
-    let onBack: () -> Void
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            coverContent
-
-            backButton
-                .padding(.top, Theme.Spacing.md)
-                .padding(.leading, Theme.Spacing.md)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            Theme.Colors.Background.reading.ignoresSafeArea()
-        }
-        .paperNoise()
-    }
-
-    // MARK: - Back Button
-
-    private var backButton: some View {
-        Button(action: onBack) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Theme.Colors.Text.secondary)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-        }
-        .accessibilityLabel("Back")
+        coverContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                Theme.Colors.Background.reading.ignoresSafeArea()
+            }
+            .paperNoise()
     }
 
     // MARK: - Content
@@ -144,21 +124,19 @@ struct CoverPageView: View {
     CoverPageView(
         filedDate: Calendar.current.date(
             from: DateComponents(year: 2025, month: 2, day: 14)
-        ),
-        onBack: {}
+        )
     )
 }
 
 #Preview("Cover - No Date") {
-    CoverPageView(filedDate: nil, onBack: {})
+    CoverPageView(filedDate: nil)
 }
 
 #Preview("Cover - Dark Mode") {
     CoverPageView(
         filedDate: Calendar.current.date(
             from: DateComponents(year: 2025, month: 2, day: 14)
-        ),
-        onBack: {}
+        )
     )
     .preferredColorScheme(.dark)
 }

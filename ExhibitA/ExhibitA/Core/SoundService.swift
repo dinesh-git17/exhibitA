@@ -11,7 +11,6 @@ import os
     enum Cue: String {
         case pageTurn = "page_turn"
         case signaturePlaced = "signature_placed"
-        case newContentChime = "new_content_chime"
     }
 
     // MARK: - Sound Preference
@@ -50,7 +49,7 @@ import os
     // MARK: - Player Setup
 
     private func preparePlayers() {
-        for cue in [Cue.pageTurn, .signaturePlaced, .newContentChime] {
+        for cue in [Cue.pageTurn, .signaturePlaced] {
             guard let url = Bundle.main.url(
                 forResource: cue.rawValue,
                 withExtension: "caf"

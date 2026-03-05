@@ -39,7 +39,10 @@ struct ExhibitAApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack(path: $router.path) {
-                HomeView()
+                HomeView(onRefresh: { [syncService, uploadQueue] in
+                    await syncService.performFullSync()
+                    await uploadQueue.processQueue()
+                })
                     .navigationDestination(for: Router.Route.self) { route in
                         switch route {
                         case .contractBook:
@@ -65,12 +68,15 @@ struct ExhibitAApp: App {
                     syncService.scheduleBackgroundRefresh()
                 }
                 if phase == .active {
-                    Task { await uploadQueue.processQueue() }
+                    Task {
+                        await syncService.performFullSync()
+                        await uploadQueue.processQueue()
+                    }
                 }
             }
         }
         .backgroundTask(.appRefresh(SyncService.backgroundTaskIdentifier)) {
-            await syncService.performSync()
+            await syncService.performFullSync()
             await syncService.scheduleBackgroundRefresh()
         }
     }
@@ -88,11 +94,14 @@ struct ExhibitAApp: App {
             }
         }
 
-        appDelegate.onNotificationRoute = { [router] route in
+        appDelegate.onNotificationRoute = { [router, syncService] route in
             if let destination = Router.Route.from(pushRoute: route) {
-                router.popToRoot()
-                router.navigate(to: destination)
+                await MainActor.run {
+                    router.popToRoot()
+                    router.navigate(to: destination)
+                }
             }
+            await syncService.performFullSync()
         }
 
         appDelegate.flushBufferedToken()
@@ -100,7 +109,7 @@ struct ExhibitAApp: App {
         let cached = await cache.loadAll()
         appState.updateCachedContent(cached)
 
-        await syncService.performSync()
+        await syncService.performFullSync()
         syncService.scheduleBackgroundRefresh()
 
         await uploadQueue.processQueue()
@@ -152,7 +161,7 @@ struct ExhibitAApp: App {
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var onDeviceToken: ((Data) -> Void)?
-    var onNotificationRoute: ((String) -> Void)?
+    var onNotificationRoute: ((String) async -> Void)?
     private var bufferedToken: Data?
 
     func application(
@@ -193,7 +202,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) async {
         let userInfo = response.notification.request.content.userInfo
         guard let route = userInfo["route"] as? String else { return }
-        onNotificationRoute?(route)
+        await onNotificationRoute?(route)
     }
 
     func userNotificationCenter(

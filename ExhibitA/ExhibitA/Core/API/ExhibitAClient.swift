@@ -25,9 +25,26 @@ actor ExhibitAClient {
         formatter.timeZone = TimeZone(identifier: "UTC")
         dateFormatter = formatter
 
+        let fractionalFormatter = DateFormatter()
+        fractionalFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
+        fractionalFormatter.locale = Locale(identifier: "en_US_POSIX")
+        fractionalFormatter.timeZone = TimeZone(identifier: "UTC")
+
         let dec = JSONDecoder()
         dec.keyDecodingStrategy = .convertFromSnakeCase
-        dec.dateDecodingStrategy = .formatted(formatter)
+        dec.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+            let cleaned = string.replacingOccurrences(of: "T", with: " ")
+                .replacingOccurrences(of: "+00:00", with: "")
+                .replacingOccurrences(of: "Z", with: "")
+            if let date = formatter.date(from: cleaned) { return date }
+            if let date = fractionalFormatter.date(from: cleaned) { return date }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unrecognized date format: \(string)"
+            )
+        }
         decoder = dec
 
         let enc = JSONEncoder()
@@ -64,6 +81,21 @@ actor ExhibitAClient {
         let (data, response) = try await performRequest(request)
         try validateStatus(response, data: data)
         return try decode(from: data)
+    }
+
+    func fetchContentBatch(ids: [String]) async throws(APIError) -> [ContentItem] {
+        guard !ids.isEmpty else { return [] }
+        var request = try makeAuthenticatedRequest(path: "/content/batch", method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["ids": ids])
+        } catch {
+            throw .decodingFailure(context: "batch request encoding")
+        }
+        let (data, response) = try await performRequest(request)
+        try validateStatus(response, data: data)
+        let envelope: ContentListResponse = try decode(from: data)
+        return envelope.items
     }
 
     // MARK: - Signatures

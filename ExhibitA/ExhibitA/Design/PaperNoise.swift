@@ -115,4 +115,5 @@ extension View {
     func paperNoise() -> some View {
         overlay { PaperNoiseView() }
     }
+
 }

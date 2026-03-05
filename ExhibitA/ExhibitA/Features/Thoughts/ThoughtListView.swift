@@ -25,6 +25,8 @@ struct ThoughtListView: View {
             }
         }
         .background(Theme.Colors.Background.primary, ignoresSafeAreaEdges: .all)
+        .toolbarBackground(Theme.Colors.Background.primary, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
     }
 

@@ -16,5 +16,6 @@ class Settings(BaseSettings):
     apns_key_id: str = ""
     apns_team_id: str = ""
     apns_key_path: str = ""
+    apns_use_sandbox: bool = False
 
     admin_key_hash: str = ""
