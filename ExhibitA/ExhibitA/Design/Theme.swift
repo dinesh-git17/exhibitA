@@ -92,6 +92,7 @@ enum Theme {
             }
             return color
         }
+
     }
 
     // MARK: - Typography (Design Doc S6.3)

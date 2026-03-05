@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct TOCPageView: View {
     let articles: [ContentItem]
@@ -6,6 +7,13 @@ struct TOCPageView: View {
     let onSelectArticle: (Int) -> Void
 
     private static let tocPageOffset = 2
+
+    @MainActor
+    private static var topSafeAreaInset: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.keyWindow?.safeAreaInsets.top ?? 0
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -41,7 +49,7 @@ struct TOCPageView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Theme.Spacing.readingHorizontal)
-        .padding(.top, Theme.Spacing.xl)
+        .padding(.top, Self.topSafeAreaInset + Theme.Spacing.md)
     }
 
     // MARK: - Header

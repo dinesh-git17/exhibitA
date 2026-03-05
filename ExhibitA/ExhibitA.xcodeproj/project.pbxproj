@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9580CBDF82DA4A6EBC0F1652 /* notif.caf in Resources */ = {isa = PBXBuildFile; fileRef = C5ACC9EFD5954AA8A13BA428 /* notif.caf */; };
+		8F4A1163ABDD46B88D1D2AF0 /* page_turn.caf in Resources */ = {isa = PBXBuildFile; fileRef = F03A8F70B896478DAEC0FEAC /* page_turn.caf */; };
+		410DF53DDDC4487B80489BFB /* signature_placed.caf in Resources */ = {isa = PBXBuildFile; fileRef = 87692FCAA0B64A1EA83C39A0 /* signature_placed.caf */; };
 		15F5F490ABEC35416993270E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2CA32C71E3332AEAF8405A7A /* Assets.xcassets */; };
 		6C5BE2232629F356326BE70D /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64230B9304007CA247B886F0 /* Config.swift */; };
 		A5B6C7D8E9F01234C5D6E7F8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A4B5C6D7E8F9102A3B4C5D /* AppState.swift */; };
@@ -42,6 +45,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C5ACC9EFD5954AA8A13BA428 /* notif.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = notif.caf; sourceTree = "<group>"; };
+		F03A8F70B896478DAEC0FEAC /* page_turn.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = page_turn.caf; sourceTree = "<group>"; };
+		87692FCAA0B64A1EA83C39A0 /* signature_placed.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = signature_placed.caf; sourceTree = "<group>"; };
 		2126D65E6059B80A6CC51F77 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		2CA32C71E3332AEAF8405A7A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		570CD91885AC3A6602CD7023 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
@@ -267,6 +273,9 @@
 			isa = PBXGroup;
 			children = (
 				2CA32C71E3332AEAF8405A7A /* Assets.xcassets */,
+				C5ACC9EFD5954AA8A13BA428 /* notif.caf */,
+				F03A8F70B896478DAEC0FEAC /* page_turn.caf */,
+				87692FCAA0B64A1EA83C39A0 /* signature_placed.caf */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -330,6 +339,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				15F5F490ABEC35416993270E /* Assets.xcassets in Resources */,
+				9580CBDF82DA4A6EBC0F1652 /* notif.caf in Resources */,
+				8F4A1163ABDD46B88D1D2AF0 /* page_turn.caf in Resources */,
+				410DF53DDDC4487B80489BFB /* signature_placed.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

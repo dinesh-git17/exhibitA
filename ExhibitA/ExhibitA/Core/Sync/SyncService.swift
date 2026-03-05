@@ -21,6 +21,30 @@ final class SyncService {
 
     // MARK: - Sync
 
+    func performFullSync() async {
+        let allContent: [ContentItem]
+        do {
+            allContent = try await client.fetchContent()
+        } catch {
+            logger.error("Full sync fetch failed: \(error)")
+            return
+        }
+
+        await cache.removeAll()
+        do {
+            if !allContent.isEmpty {
+                try await cache.save(allContent)
+            }
+        } catch {
+            logger.error("Full sync cache write failed: \(error)")
+            return
+        }
+
+        appState.updateCachedContent(allContent)
+        await hydrateSignatures(content: allContent)
+        appState.lastSyncAt = .now
+    }
+
     func performSync() async {
         let since = appState.lastSyncAt
 
@@ -33,6 +57,9 @@ final class SyncService {
         }
 
         if changes.isEmpty {
+            let allContent = await cache.loadAll()
+            appState.updateCachedContent(allContent)
+            await hydrateSignatures(content: allContent)
             appState.lastSyncAt = .now
             return
         }
@@ -51,14 +78,12 @@ final class SyncService {
             }
         }
 
-        var fetched: [ContentItem] = []
-        for id in idsToFetch {
-            do {
-                let item = try await client.fetchContentItem(id: id)
-                fetched.append(item)
-            } catch {
-                logger.warning("Content fetch skipped for \(id): \(error)")
-            }
+        var fetched: [ContentItem]
+        do {
+            fetched = try await client.fetchContentBatch(ids: Array(idsToFetch))
+        } catch {
+            logger.warning("Batch fetch failed, falling back to parallel individual fetches: \(error)")
+            fetched = await fetchIndividually(ids: idsToFetch)
         }
 
         do {
@@ -75,9 +100,87 @@ final class SyncService {
 
         let allContent = await cache.loadAll()
         appState.updateCachedContent(allContent)
+
+        await hydrateSignatures(content: allContent)
+
         appState.lastSyncAt = .now
 
         logger.debug("Sync complete: \(fetched.count) updated, \(idsToDelete.count) deleted")
+    }
+
+    private func fetchIndividually(ids: Set<String>) async -> [ContentItem] {
+        await withTaskGroup(of: ContentItem?.self) { group in
+            for id in ids {
+                group.addTask {
+                    try? await self.client.fetchContentItem(id: id)
+                }
+            }
+            var results: [ContentItem] = []
+            for await item in group {
+                if let item { results.append(item) }
+            }
+            return results
+        }
+    }
+
+    // MARK: - Signature Hydration
+
+    private func hydrateSignatures(content: [ContentItem]) async {
+        let signable = content.filter { $0.requiresSignature }
+        guard !signable.isEmpty else { return }
+
+        let signatureCache = SignatureCache()
+
+        let allRecords: [(String, [SignatureRecord])] = await withTaskGroup(
+            of: (String, [SignatureRecord]).self
+        ) { group in
+            for item in signable {
+                group.addTask {
+                    let records = (try? await self.client.fetchSignatures(contentId: item.id)) ?? []
+                    return (item.id, records)
+                }
+            }
+            var results: [(String, [SignatureRecord])] = []
+            for await result in group {
+                results.append(result)
+            }
+            return results
+        }
+
+        for (contentId, records) in allRecords {
+            for record in records {
+                if !appState.isSigned(contentId: contentId, signer: record.signer) {
+                    appState.markSigned(
+                        contentId: contentId,
+                        signer: record.signer,
+                        at: record.signedAt
+                    )
+                }
+            }
+        }
+
+        await withTaskGroup(of: Void.self) { group in
+            for (contentId, records) in allRecords {
+                for record in records {
+                    group.addTask {
+                        let cached = await signatureCache.load(
+                            contentId: contentId,
+                            signer: record.signer
+                        )
+                        guard cached == nil else { return }
+                        if let imageData = try? await self.client.fetchSignatureImage(
+                            signatureId: record.id
+                        ) {
+                            try? await signatureCache.save(
+                                png: imageData,
+                                contentId: contentId,
+                                signer: record.signer
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Background Refresh

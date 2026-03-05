@@ -57,6 +57,27 @@ async def list_content(
     return JSONResponse(content={"items": [_row_to_content(row) for row in rows]})
 
 
+@router.post("/content/batch")
+async def batch_content(
+    request: Request,
+) -> JSONResponse:
+    """Retrieve multiple content items by ID in a single request."""
+    body = await request.json()
+    ids: list[str] = body.get("ids", [])
+    if not ids:
+        return JSONResponse(content={"items": []})
+
+    placeholders = ",".join("?" for _ in ids)
+    db = request.app.state.db
+    cursor = await db.execute(
+        f"SELECT * FROM content WHERE id IN ({placeholders}) "  # noqa: S608
+        "ORDER BY type, section_order",
+        ids,
+    )
+    rows = await cursor.fetchall()
+    return JSONResponse(content={"items": [_row_to_content(row) for row in rows]})
+
+
 @router.get("/content/{content_id}")
 async def get_content(
     request: Request,

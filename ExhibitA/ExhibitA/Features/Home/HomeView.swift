@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(Router.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    var onRefresh: (() async -> Void)?
     @State private var showSettings = false
 
     var body: some View {
@@ -29,7 +30,7 @@ struct HomeView: View {
         .overlay(alignment: .topTrailing) { settingsButton }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
-                SettingsView()
+                SettingsView(onRefresh: onRefresh)
             }
         }
         .background(Theme.Colors.Background.primary, ignoresSafeAreaEdges: .all)

@@ -27,7 +27,7 @@ _NOTIFICATION_COPY: dict[str, dict[str, str]] = {
     },
 }
 
-_APNS_TOPIC = "dev.dineshd.exhibita"
+_APNS_TOPIC = "com.exhibita.app"
 
 
 def _build_client(settings: Settings) -> APNs | None:
@@ -47,7 +47,7 @@ def _build_client(settings: Settings) -> APNs | None:
         key_id=settings.apns_key_id,
         team_id=settings.apns_team_id,
         topic=_APNS_TOPIC,
-        use_sandbox=False,
+        use_sandbox=settings.apns_use_sandbox,
     )
 
 

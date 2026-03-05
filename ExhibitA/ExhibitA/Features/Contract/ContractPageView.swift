@@ -312,7 +312,7 @@ struct ContractPageView: View {
 
     private var articleBodyContent: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: Theme.Spacing.lg)
+            Spacer(minLength: Theme.Spacing.lg)
 
             if page.isFirstPage {
                 headingBlock
@@ -321,7 +321,7 @@ struct ContractPageView: View {
 
             sectionsBlock
 
-            Spacer(minLength: Theme.Spacing.sm)
+            Spacer(minLength: Theme.Spacing.lg)
 
             footerBlock
                 .padding(.bottom, Theme.Spacing.md)
