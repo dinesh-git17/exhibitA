@@ -12,8 +12,8 @@ nonisolated enum ArticleSection: Sendable {
 
     var text: String {
         switch self {
-        case .preamble(let t), .agreement(let t), .clause(let t), .body(let t):
-            return t
+        case let .preamble(t), let .agreement(t), let .clause(t), let .body(t):
+            t
         }
     }
 }
@@ -22,6 +22,7 @@ nonisolated enum ArticleSection: Sendable {
 
 nonisolated struct ArticlePage: Identifiable, Sendable {
     let id: String
+    let contentId: String
     let articleNumber: String?
     let articleTitle: String?
     let sections: [ArticleSection]
@@ -34,7 +35,6 @@ nonisolated struct ArticlePage: Identifiable, Sendable {
 // MARK: - Contract Body Parser
 
 nonisolated enum ContractBodyParser: Sendable {
-
     static func parse(_ body: String) -> [ArticleSection] {
         let cleaned = body.replacingOccurrences(of: "**", with: "")
         let paragraphs = cleaned
@@ -69,7 +69,6 @@ nonisolated enum ContractBodyParser: Sendable {
 
 @MainActor
 private enum MeasurementFonts {
-
     static let contractBody: UIFont = serifFont(size: 18, weight: .regular)
     static let legalPreamble: UIFont = serifFont(size: 18, weight: .regular, italic: true)
     static let sectionMarker: UIFont = serifFont(size: 18, weight: .semibold)
@@ -79,8 +78,10 @@ private enum MeasurementFonts {
     private static func serifFont(
         size: CGFloat,
         weight: UIFont.Weight,
-        italic: Bool = false
-    ) -> UIFont {
+        italic: Bool = false,
+    )
+        -> UIFont
+    {
         var descriptor = UIFont.systemFont(ofSize: size, weight: weight).fontDescriptor
         if let serif = descriptor.withDesign(.serif) {
             descriptor = serif
@@ -96,7 +97,6 @@ private enum MeasurementFonts {
 
 @MainActor
 private enum TextMeasurement {
-
     private static let bodyFontSize: CGFloat = 18
     private static let naturalLineHeightRatio: CGFloat = 1.2
     static let bodyLineSpacing = bodyFontSize * (Theme.LineHeight.reading - naturalLineHeightRatio)
@@ -105,8 +105,10 @@ private enum TextMeasurement {
         for text: String,
         font: UIFont,
         width: CGFloat,
-        lineSpacing: CGFloat = 0
-    ) -> CGFloat {
+        lineSpacing: CGFloat = 0,
+    )
+        -> CGFloat
+    {
         guard !text.isEmpty else { return 0 }
 
         let paragraphStyle = NSMutableParagraphStyle()
@@ -122,22 +124,21 @@ private enum TextMeasurement {
         let bounds = attrString.boundingRect(
             with: constraintSize,
             options: [.usesLineFragmentOrigin, .usesFontLeading],
-            context: nil
+            context: nil,
         )
         return ceil(bounds.height)
     }
 
     static func sectionHeight(_ section: ArticleSection, width: CGFloat) -> CGFloat {
-        let font: UIFont
-        switch section {
+        let font: UIFont = switch section {
         case .preamble:
-            font = MeasurementFonts.legalPreamble
+            MeasurementFonts.legalPreamble
         case .agreement:
-            font = MeasurementFonts.contractBody
+            MeasurementFonts.contractBody
         case .clause:
-            font = MeasurementFonts.contractBody
+            MeasurementFonts.contractBody
         case .body:
-            font = MeasurementFonts.contractBody
+            MeasurementFonts.contractBody
         }
         return height(for: section.text, font: font, width: width, lineSpacing: bodyLineSpacing)
     }
@@ -145,8 +146,10 @@ private enum TextMeasurement {
     static func headingHeight(
         articleNumber: String?,
         title: String?,
-        width: CGFloat
-    ) -> CGFloat {
+        width: CGFloat,
+    )
+        -> CGFloat
+    {
         var total: CGFloat = 0
 
         if let number = articleNumber {
@@ -157,11 +160,11 @@ private enum TextMeasurement {
             total += Theme.Spacing.md
         }
 
-        if let title = title {
+        if let title {
             total += height(
                 for: title.uppercased(),
                 font: MeasurementFonts.articleTitle,
-                width: width
+                width: width,
             )
         }
 
@@ -173,7 +176,6 @@ private enum TextMeasurement {
 
 @MainActor
 enum ContractPaginator {
-
     struct PageMetrics: Sendable {
         let contentWidth: CGFloat
         let bodyHeight: CGFloat
@@ -186,7 +188,7 @@ enum ContractPaginator {
         let headingHeight = TextMeasurement.headingHeight(
             articleNumber: article.articleNumber,
             title: article.title,
-            width: width
+            width: width,
         )
         let headingBottomSpacing = Theme.Spacing.lg
         let firstPageAvailable = metrics.bodyHeight - headingHeight - headingBottomSpacing
@@ -203,7 +205,7 @@ enum ContractPaginator {
             let spacingBefore: CGFloat = currentPage.isEmpty ? 0 : sectionSpacing
             let needed = spacingBefore + sectionH
 
-            if !currentPage.isEmpty && currentHeight + needed > availableHeight {
+            if !currentPage.isEmpty, currentHeight + needed > availableHeight {
                 pages.append(currentPage)
                 currentPage = [section]
                 currentHeight = sectionH
@@ -232,25 +234,27 @@ enum ContractPaginator {
         for (index, pageSections) in pages.enumerated() {
             result.append(ArticlePage(
                 id: "\(articleId)-body-\(index)",
+                contentId: articleId,
                 articleNumber: article.articleNumber,
                 articleTitle: article.title,
                 sections: pageSections,
                 isFirstPage: index == 0,
                 isSignaturePage: false,
                 pageNumber: index + 1,
-                totalPages: totalPages
+                totalPages: totalPages,
             ))
         }
 
         result.append(ArticlePage(
             id: "\(articleId)-signature",
+            contentId: articleId,
             articleNumber: article.articleNumber,
             articleTitle: article.title,
             sections: [],
             isFirstPage: false,
             isSignaturePage: true,
             pageNumber: totalPages,
-            totalPages: totalPages
+            totalPages: totalPages,
         ))
 
         return result
@@ -275,7 +279,7 @@ enum ContractPaginator {
 
         return PageMetrics(
             contentWidth: max(contentWidth, 100),
-            bodyHeight: max(bodyHeight, 100)
+            bodyHeight: max(bodyHeight, 100),
         )
     }
 }
@@ -350,7 +354,7 @@ struct ContractPageView: View {
 
     private var sectionsBlock: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.paragraphSpacing) {
-            if page.sections.isEmpty && page.isFirstPage {
+            if page.sections.isEmpty, page.isFirstPage {
                 Text("No content filed.")
                     .font(Theme.Typography.metadata)
                     .foregroundStyle(Theme.Colors.Text.muted)
@@ -367,26 +371,26 @@ struct ContractPageView: View {
     @ViewBuilder
     private func sectionView(_ section: ArticleSection) -> some View {
         switch section {
-        case .preamble(let text):
+        case let .preamble(text):
             Text(text)
                 .font(Theme.Typography.legalPreamble)
                 .foregroundStyle(Theme.Colors.Text.secondary)
                 .lineSpacing(Self.bodyLineSpacing)
                 .fixedSize(horizontal: false, vertical: true)
 
-        case .agreement(let text):
+        case let .agreement(text):
             Text(text)
                 .font(Theme.Typography.contractBody)
                 .foregroundStyle(Theme.Colors.Text.reading)
                 .lineSpacing(Self.bodyLineSpacing)
                 .fixedSize(horizontal: false, vertical: true)
 
-        case .clause(let text):
+        case let .clause(text):
             styledClause(text)
                 .lineSpacing(Self.bodyLineSpacing)
                 .fixedSize(horizontal: false, vertical: true)
 
-        case .body(let text):
+        case let .body(text):
             Text(text)
                 .font(Theme.Typography.contractBody)
                 .foregroundStyle(Theme.Colors.Text.reading)
@@ -402,7 +406,7 @@ struct ContractPageView: View {
                 .foregroundStyle(Theme.Colors.Accent.primary)
         }
 
-        let marker = String(text[text.startIndex..<spaceIndex])
+        let marker = String(text[text.startIndex ..< spaceIndex])
         let rest = String(text[spaceIndex...]).trimmingCharacters(in: .whitespaces)
 
         var styled = AttributedString(marker + "  ")
@@ -442,18 +446,7 @@ struct ContractPageView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            Text("ACKNOWLEDGED AND AGREED")
-                .font(Theme.Typography.sectionMarker)
-                .foregroundStyle(Theme.Colors.Text.primary)
-                .tracking(1.5)
-                .multilineTextAlignment(.center)
-                .accessibilityAddTraits(.isHeader)
-                .padding(.bottom, Theme.Spacing.xxl)
-
-            signatureLine(name: "Dinesh Dawonauth", role: "The Boyfriend")
-                .padding(.bottom, Theme.Spacing.xl)
-
-            signatureLine(name: "Carolina Lombardo", role: "The Girlfriend")
+            SignatureBlockView(contentId: page.contentId)
 
             Spacer()
 
@@ -462,84 +455,64 @@ struct ContractPageView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    private func signatureLine(name: String, role: String) -> some View {
-        VStack(spacing: Theme.Spacing.xs) {
-            Rectangle()
-                .fill(Theme.Colors.Border.separator)
-                .frame(width: 200, height: Theme.Dividers.hairline)
-
-            Text(name)
-                .font(Theme.Typography.contractBody)
-                .foregroundStyle(Theme.Colors.Text.primary)
-
-            Text("(\"\(role)\")")
-                .font(Theme.Typography.metadata)
-                .foregroundStyle(Theme.Colors.Text.secondary)
-
-            Text("Date: _______________")
-                .font(Theme.Typography.metadata)
-                .foregroundStyle(Theme.Colors.Text.muted)
-        }
-        .multilineTextAlignment(.center)
-        .accessibilityElement(children: .combine)
-    }
 }
 
 // MARK: - Previews
 
 private enum PreviewContent {
     static let shortBody = """
-        WHEREAS, the Parties acknowledge that this Agreement was not entered into lightly, \
-        casually, or for temporary amusement, but instead arose from real affection, deep \
-        attachment, and a bond that has grown into something meaningful and serious;
+    WHEREAS, the Parties acknowledge that this Agreement was not entered into lightly, \
+    casually, or for temporary amusement, but instead arose from real affection, deep \
+    attachment, and a bond that has grown into something meaningful and serious;
 
-        NOW, THEREFORE, the Parties hereby establish that Forever shall mean a love intended \
-        to last, a bond entered into seriously, and a promise that the Girlfriend is not being \
-        loved only for the present moment, but for all the moments still to come.
-        """
+    NOW, THEREFORE, the Parties hereby establish that Forever shall mean a love intended \
+    to last, a bond entered into seriously, and a promise that the Girlfriend is not being \
+    loved only for the present moment, but for all the moments still to come.
+    """
 
     static let longBody = """
-        WHEREAS, the Girlfriend has expressed, on no fewer than forty-seven (47) documented \
-        occasions, a preference for snacks of the sweet, salty, and surprise me variety;
+    WHEREAS, the Girlfriend has expressed, on no fewer than forty-seven (47) documented \
+    occasions, a preference for snacks of the sweet, salty, and surprise me variety;
 
-        AND WHEREAS, the Boyfriend has demonstrated a pattern of arriving with said snacks \
-        unprompted, thereby establishing precedent;
+    AND WHEREAS, the Boyfriend has demonstrated a pattern of arriving with said snacks \
+    unprompted, thereby establishing precedent;
 
-        AND WHEREAS, snack procurement is recognized under this Agreement as an act of love, \
-        not a logistical inconvenience;
+    AND WHEREAS, snack procurement is recognized under this Agreement as an act of love, \
+    not a logistical inconvenience;
 
-        NOW, THEREFORE, the Parties agree to the following terms regarding snack obligations:
+    NOW, THEREFORE, the Parties agree to the following terms regarding snack obligations:
 
-        \u{00A7}3.1  The Boyfriend shall maintain a reasonable inventory of the Girlfriend's \
-        preferred snacks at all times. Reasonable shall be defined as more than zero.
+    \u{00A7}3.1  The Boyfriend shall maintain a reasonable inventory of the Girlfriend's \
+    preferred snacks at all times. Reasonable shall be defined as more than zero.
 
-        \u{00A7}3.2  The phrase I'm not hungry shall not be interpreted literally and the \
-        Boyfriend shall procure snacks regardless.
+    \u{00A7}3.2  The phrase I'm not hungry shall not be interpreted literally and the \
+    Boyfriend shall procure snacks regardless.
 
-        \u{00A7}3.3  Failure to comply with the above shall constitute a Minor Infraction \
-        under Schedule B of this Agreement.
+    \u{00A7}3.3  Failure to comply with the above shall constitute a Minor Infraction \
+    under Schedule B of this Agreement.
 
-        \u{00A7}3.4  In the event of a dispute regarding snack preferences, the Girlfriend's \
-        craving at the time of request shall be considered the final authority.
+    \u{00A7}3.4  In the event of a dispute regarding snack preferences, the Girlfriend's \
+    craving at the time of request shall be considered the final authority.
 
-        \u{00A7}3.5  Emergency snack runs may be initiated at any hour and shall not be \
-        subject to the Boyfriend's claims of tiredness, distance, or weather conditions.
+    \u{00A7}3.5  Emergency snack runs may be initiated at any hour and shall not be \
+    subject to the Boyfriend's claims of tiredness, distance, or weather conditions.
 
-        \u{00A7}3.6  The Boyfriend acknowledges that snack sharing is a privilege, not a right, \
-        and that taking the last piece without offering it first constitutes a breach of trust.
+    \u{00A7}3.6  The Boyfriend acknowledges that snack sharing is a privilege, not a right, \
+    and that taking the last piece without offering it first constitutes a breach of trust.
 
-        \u{00A7}3.7  All snack-related disputes shall be resolved in favor of the Girlfriend \
-        unless the Boyfriend presents compelling evidence of a superior snack option.
-        """
+    \u{00A7}3.7  All snack-related disputes shall be resolved in favor of the Girlfriend \
+    unless the Boyfriend presents compelling evidence of a superior snack option.
+    """
 
     static func article(
         id: String = "art-preview",
         title: String = "Snack Procurement Obligations",
         number: String = "Article III",
         body: String = longBody,
-        order: Int = 3
-    ) -> ContentItem {
+        order: Int = 3,
+    )
+        -> ContentItem
+    {
         ContentItem(
             id: id,
             type: .contract,
@@ -551,11 +524,11 @@ private enum PreviewContent {
             sectionOrder: order,
             requiresSignature: true,
             createdAt: Calendar.current.date(
-                from: DateComponents(year: 2025, month: 2, day: 14)
+                from: DateComponents(year: 2_025, month: 2, day: 14),
             ) ?? .now,
             updatedAt: Calendar.current.date(
-                from: DateComponents(year: 2025, month: 2, day: 14)
-            ) ?? .now
+                from: DateComponents(year: 2_025, month: 2, day: 14),
+            ) ?? .now,
         )
     }
 }
@@ -574,7 +547,7 @@ private enum PreviewContent {
         title: "Definition of Forever",
         number: "Article I",
         body: PreviewContent.shortBody,
-        order: 1
+        order: 1,
     )
     let metrics = ContractPaginator.computeMetrics()
     let pages = ContractPaginator.paginate(article: article, metrics: metrics)
@@ -589,6 +562,7 @@ private enum PreviewContent {
     let pages = ContractPaginator.paginate(article: article, metrics: metrics)
     if let last = pages.last {
         ContractPageView(page: last)
+            .environment(AppState())
     }
 }
 

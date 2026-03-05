@@ -32,6 +32,8 @@
 		D9E0F1A2B3C4D5E6F7A8B9CA /* CoverPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B7C8D9E0F1A2B3C4D5E6F7 /* CoverPageView.swift */; };
 		E0F1A2B3C4D5E6F7A8B9CADB /* TOCPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C8D9E0F1A2B3C4D5E6F7A8 /* TOCPageView.swift */; };
 		F1A2B3C4D5E6F7A8B9CADBE0 /* ContractPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */; };
+		796B0B7AA9C9403388060353 /* SignatureBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EC86E10821843E2B1B44154 /* SignatureBlockView.swift */; };
+		CF4FDE6E517E494CB9CFD937 /* SignaturePadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +66,8 @@
 		A6B7C8D9E0F1A2B3C4D5E6F7 /* CoverPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverPageView.swift; sourceTree = "<group>"; };
 		B7C8D9E0F1A2B3C4D5E6F7A8 /* TOCPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOCPageView.swift; sourceTree = "<group>"; };
 		C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractPageView.swift; sourceTree = "<group>"; };
+		4EC86E10821843E2B1B44154 /* SignatureBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureBlockView.swift; sourceTree = "<group>"; };
+		2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignaturePadView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +156,8 @@
 				F5A6B7C8D9E0F1A2B3C4D5E6 /* ContractBookView.swift */,
 				C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */,
 				A6B7C8D9E0F1A2B3C4D5E6F7 /* CoverPageView.swift */,
+				4EC86E10821843E2B1B44154 /* SignatureBlockView.swift */,
+				2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */,
 				B7C8D9E0F1A2B3C4D5E6F7A8 /* TOCPageView.swift */,
 			);
 			path = Contract;
@@ -333,6 +339,8 @@
 				D9E0F1A2B3C4D5E6F7A8B9CA /* CoverPageView.swift in Sources */,
 				E0F1A2B3C4D5E6F7A8B9CADB /* TOCPageView.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9CADBE0 /* ContractPageView.swift in Sources */,
+				796B0B7AA9C9403388060353 /* SignatureBlockView.swift in Sources */,
+				CF4FDE6E517E494CB9CFD937 /* SignaturePadView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
