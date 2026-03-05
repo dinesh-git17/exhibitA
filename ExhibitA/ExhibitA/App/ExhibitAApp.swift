@@ -13,6 +13,7 @@ struct ExhibitAApp: App {
     private let client: ExhibitAClient
     private let cache: ContentCache
     private let uploadQueue: UploadQueue
+    private let soundService: SoundService
 
     init() {
         let state = AppState()
@@ -28,6 +29,8 @@ struct ExhibitAApp: App {
             signatureCache: SignatureCache(),
             appState: state
         )
+
+        soundService = SoundService()
 
         KeychainService.seedAPIKeyIfNeeded(Config.apiKey)
         Self.suppressLiquidGlass()
@@ -55,6 +58,7 @@ struct ExhibitAApp: App {
             .environment(appState)
             .environment(router)
             .environment(uploadQueue)
+            .environment(soundService)
             .task { await handleLaunch() }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background {
