@@ -34,6 +34,7 @@
 		F1A2B3C4D5E6F7A8B9CADBE0 /* ContractPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */; };
 		796B0B7AA9C9403388060353 /* SignatureBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EC86E10821843E2B1B44154 /* SignatureBlockView.swift */; };
 		CF4FDE6E517E494CB9CFD937 /* SignaturePadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */; };
+		CA55920C300D449FB8C6E937 /* FinalPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F780326BD331403D8965AE9E /* FinalPageView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +69,7 @@
 		C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractPageView.swift; sourceTree = "<group>"; };
 		4EC86E10821843E2B1B44154 /* SignatureBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureBlockView.swift; sourceTree = "<group>"; };
 		2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignaturePadView.swift; sourceTree = "<group>"; };
+		F780326BD331403D8965AE9E /* FinalPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalPageView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +158,7 @@
 				F5A6B7C8D9E0F1A2B3C4D5E6 /* ContractBookView.swift */,
 				C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */,
 				A6B7C8D9E0F1A2B3C4D5E6F7 /* CoverPageView.swift */,
+				F780326BD331403D8965AE9E /* FinalPageView.swift */,
 				4EC86E10821843E2B1B44154 /* SignatureBlockView.swift */,
 				2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */,
 				B7C8D9E0F1A2B3C4D5E6F7A8 /* TOCPageView.swift */,
@@ -341,6 +344,7 @@
 				F1A2B3C4D5E6F7A8B9CADBE0 /* ContractPageView.swift in Sources */,
 				796B0B7AA9C9403388060353 /* SignatureBlockView.swift in Sources */,
 				CF4FDE6E517E494CB9CFD937 /* SignaturePadView.swift in Sources */,
+				CA55920C300D449FB8C6E937 /* FinalPageView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
