@@ -26,3 +26,22 @@ import SwiftUI
         path.removeLast(path.count)
     }
 }
+
+extension Router.Route {
+    static func from(pushRoute value: String) -> Router.Route? {
+        let segments = value.split(separator: "/", maxSplits: 1)
+        guard let kind = segments.first else { return nil }
+        let id = segments.count > 1 ? String(segments[1]) : nil
+
+        switch kind {
+        case "contract":
+            return .contractBook
+        case "letter":
+            return id.map { .letterDetail(id: $0) } ?? .lettersList
+        case "thought":
+            return id.map { .thoughtDetail(id: $0) } ?? .thoughtsList
+        default:
+            return nil
+        }
+    }
+}

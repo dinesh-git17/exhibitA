@@ -437,6 +437,7 @@ async def content_create(
         settings,
         db,
         content_type,
+        content_id=content_id,
         article_number=article_number or None,
         classification=classification or None,
     )

@@ -70,11 +70,19 @@ def build_notification_copy(
     return {"title": title, "body": body}
 
 
+def _build_route(content_type: str, content_id: str) -> str:
+    """Build the deep-link route string matching the iOS Router.Route contract."""
+    if content_type == ContentType.CONTRACT:
+        return "contract"
+    return f"{content_type}/{content_id}"
+
+
 async def send_push(
     settings: Settings,
     db: Any,
     content_type: str,
     *,
+    content_id: str | None = None,
     article_number: str | None = None,
     classification: str | None = None,
 ) -> list[str]:
@@ -101,19 +109,25 @@ async def send_push(
         classification=classification,
     )
 
+    route = _build_route(content_type, content_id or "") if content_id else None
+
     warnings: list[str] = []
     for token in tokens:
+        message: dict[str, Any] = {
+            "aps": {
+                "alert": {
+                    "title": copy["title"],
+                    "body": copy["body"],
+                },
+                "sound": "default",
+            },
+        }
+        if route:
+            message["route"] = route
+
         request = NotificationRequest(
             device_token=token,
-            message={
-                "aps": {
-                    "alert": {
-                        "title": copy["title"],
-                        "body": copy["body"],
-                    },
-                    "sound": "default",
-                },
-            },
+            message=message,
             push_type=PushType.ALERT,
         )
         try:
