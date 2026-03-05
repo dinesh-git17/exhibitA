@@ -10,12 +10,13 @@ struct SignaturePadView: View {
     let onSigned: @MainActor (Date) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(UploadQueue.self) private var uploadQueue: UploadQueue?
 
     #if canImport(PencilKit)
     @State private var drawing = PKDrawing()
     #endif
     @State private var canvasIsEmpty = true
-    @State private var isUploading = false
+    @State private var hasSubmitted = false
     @State private var errorMessage: String?
     @State private var showClearConfirmation = false
 
@@ -101,16 +102,11 @@ struct SignaturePadView: View {
             Button {
                 Task { await handleSign() }
             } label: {
-                if isUploading {
-                    ProgressView()
-                        .tint(Theme.Colors.Text.primary)
-                } else {
-                    Text("Sign")
-                }
+                Text("Sign")
             }
             .font(Theme.Typography.sectionMarker)
             .foregroundStyle(canvasIsEmpty ? Theme.Colors.Text.muted : Theme.Colors.Text.primary)
-            .disabled(canvasIsEmpty || isUploading)
+            .disabled(canvasIsEmpty || hasSubmitted)
             .accessibilityLabel("Sign")
             .accessibilityHint(canvasIsEmpty ? "Draw your signature first" : "Submits your signature")
         }
@@ -148,9 +144,7 @@ struct SignaturePadView: View {
 
     #if canImport(PencilKit)
     private func handleSign() async {
-        guard !drawing.strokes.isEmpty else { return }
-        isUploading = true
-        defer { isUploading = false }
+        guard !hasSubmitted, !drawing.strokes.isEmpty else { return }
 
         guard let pngData = exportPNG() else {
             errorMessage = "Failed to export signature."
@@ -170,23 +164,10 @@ struct SignaturePadView: View {
             return
         }
 
-        let client = ExhibitAClient(baseURL: Config.apiBaseURL)
-        do {
-            let record = try await client.uploadSignature(
-                contentId: contentId,
-                signer: signer,
-                png: pngData
-            )
-            onSigned(record.signedAt)
-            dismiss()
-        } catch {
-            if case .httpFailure(let statusCode, _, _) = error, statusCode == 409 {
-                onSigned(.now)
-                dismiss()
-            } else {
-                errorMessage = "Could not upload signature. Please try again."
-            }
-        }
+        hasSubmitted = true
+        uploadQueue?.enqueue(contentId: contentId, signer: signer)
+        onSigned(.now)
+        dismiss()
     }
 
     private func exportPNG() -> Data? {

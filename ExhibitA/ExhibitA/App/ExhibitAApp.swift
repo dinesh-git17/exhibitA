@@ -12,6 +12,7 @@ struct ExhibitAApp: App {
     private let syncService: SyncService
     private let client: ExhibitAClient
     private let cache: ContentCache
+    private let uploadQueue: UploadQueue
 
     init() {
         let state = AppState()
@@ -22,6 +23,11 @@ struct ExhibitAApp: App {
         client = apiClient
         cache = contentCache
         syncService = SyncService(client: apiClient, cache: contentCache, appState: state)
+        uploadQueue = UploadQueue(
+            client: apiClient,
+            signatureCache: SignatureCache(),
+            appState: state
+        )
 
         KeychainService.seedAPIKeyIfNeeded(Config.apiKey)
         Self.suppressLiquidGlass()
@@ -48,10 +54,14 @@ struct ExhibitAApp: App {
             }
             .environment(appState)
             .environment(router)
+            .environment(uploadQueue)
             .task { await handleLaunch() }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background {
                     syncService.scheduleBackgroundRefresh()
+                }
+                if phase == .active {
+                    Task { await uploadQueue.processQueue() }
                 }
             }
         }
@@ -88,6 +98,9 @@ struct ExhibitAApp: App {
 
         await syncService.performSync()
         syncService.scheduleBackgroundRefresh()
+
+        await uploadQueue.processQueue()
+        uploadQueue.startMonitoring()
 
         await enrollPushNotifications()
     }
