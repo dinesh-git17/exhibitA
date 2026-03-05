@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TOCPageView: View {
     let articles: [ContentItem]
+    var articlePageIndices: [Int] = []
     let onSelectArticle: (Int) -> Void
 
     private static let tocPageOffset = 2
@@ -75,7 +76,9 @@ struct TOCPageView: View {
         _ article: ContentItem,
         index: Int
     ) -> some View {
-        let pageIndex = index + Self.tocPageOffset
+        let pageIndex = index < articlePageIndices.count
+            ? articlePageIndices[index]
+            : index + Self.tocPageOffset
         let displayPage = pageIndex + 1
 
         return Button {

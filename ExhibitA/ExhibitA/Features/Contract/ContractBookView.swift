@@ -132,21 +132,35 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             )
             controllers.append(cover)
 
+            let metrics = ContractPaginator.computeMetrics()
+            var articleStartIndices: [Int] = []
+            var articleControllers: [UIViewController] = []
+            let coverAndTocCount = 2
+
+            for article in articles {
+                articleStartIndices.append(coverAndTocCount + articleControllers.count)
+                let pages = ContractPaginator.paginate(
+                    article: article,
+                    metrics: metrics
+                )
+                for page in pages {
+                    let vc = UIHostingController(
+                        rootView: ContractPageView(page: page)
+                    )
+                    articleControllers.append(vc)
+                }
+            }
+
             let toc = UIHostingController(
                 rootView: TOCPageView(
-                    articles: articles
+                    articles: articles,
+                    articlePageIndices: articleStartIndices
                 ) { [weak self] pageIndex in
                     self?.jumpTo(pageIndex)
                 }
             )
             controllers.append(toc)
-
-            for article in articles {
-                let page = UIHostingController(
-                    rootView: ArticlePageView(article: article)
-                )
-                controllers.append(page)
-            }
+            controllers.append(contentsOf: articleControllers)
 
             let readingBg = UIColor(named: "BackgroundReading") ?? .clear
             for controller in controllers {
@@ -219,39 +233,6 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
     }
 }
 
-// MARK: - Article Page View
-
-private struct ArticlePageView: View {
-    let article: ContentItem
-
-    var body: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            Spacer()
-
-            if let articleNumber = article.articleNumber {
-                Text(articleNumber.uppercased())
-                    .font(Theme.Typography.screenTitle)
-                    .foregroundStyle(Theme.Colors.Text.primary)
-                    .accessibilityAddTraits(.isHeader)
-            }
-
-            if let title = article.title {
-                Text(title)
-                    .font(Theme.Typography.articleTitle)
-                    .foregroundStyle(Theme.Colors.Text.primary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, Theme.Spacing.readingHorizontal)
-        .background {
-            Theme.Colors.Background.reading.ignoresSafeArea()
-        }
-        .paperNoise()
-    }
-}
 
 // MARK: - Previews
 

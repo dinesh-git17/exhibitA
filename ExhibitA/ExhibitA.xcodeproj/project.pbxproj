@@ -31,6 +31,7 @@
 		C8D9E0F1A2B3C4D5E6F7A8B9 /* ContractBookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A6B7C8D9E0F1A2B3C4D5E6 /* ContractBookView.swift */; };
 		D9E0F1A2B3C4D5E6F7A8B9CA /* CoverPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B7C8D9E0F1A2B3C4D5E6F7 /* CoverPageView.swift */; };
 		E0F1A2B3C4D5E6F7A8B9CADB /* TOCPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C8D9E0F1A2B3C4D5E6F7A8 /* TOCPageView.swift */; };
+		F1A2B3C4D5E6F7A8B9CADBE0 /* ContractPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -62,6 +63,7 @@
 		F5A6B7C8D9E0F1A2B3C4D5E6 /* ContractBookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractBookView.swift; sourceTree = "<group>"; };
 		A6B7C8D9E0F1A2B3C4D5E6F7 /* CoverPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverPageView.swift; sourceTree = "<group>"; };
 		B7C8D9E0F1A2B3C4D5E6F7A8 /* TOCPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TOCPageView.swift; sourceTree = "<group>"; };
+		C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractPageView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +150,7 @@
 			isa = PBXGroup;
 			children = (
 				F5A6B7C8D9E0F1A2B3C4D5E6 /* ContractBookView.swift */,
+				C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */,
 				A6B7C8D9E0F1A2B3C4D5E6F7 /* CoverPageView.swift */,
 				B7C8D9E0F1A2B3C4D5E6F7A8 /* TOCPageView.swift */,
 			);
@@ -329,6 +332,7 @@
 				C8D9E0F1A2B3C4D5E6F7A8B9 /* ContractBookView.swift in Sources */,
 				D9E0F1A2B3C4D5E6F7A8B9CA /* CoverPageView.swift in Sources */,
 				E0F1A2B3C4D5E6F7A8B9CADB /* TOCPageView.swift in Sources */,
+				F1A2B3C4D5E6F7A8B9CADBE0 /* ContractPageView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
