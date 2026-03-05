@@ -5,6 +5,7 @@ struct ContractBookView: View {
     @Environment(AppState.self) private var appState
     @Environment(Router.self) private var router
     @Environment(UploadQueue.self) private var uploadQueue: UploadQueue?
+    @Environment(SoundService.self) private var soundService: SoundService?
 
     private var articles: [ContentItem] {
         appState.cachedContent
@@ -22,7 +23,8 @@ struct ContractBookView: View {
             filedDate: filedDate,
             onBack: { router.pop() },
             appState: appState,
-            uploadQueue: uploadQueue
+            uploadQueue: uploadQueue,
+            soundService: soundService
         )
         .ignoresSafeArea()
         .navigationBarBackButtonHidden()
@@ -38,6 +40,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
     let onBack: () -> Void
     let appState: AppState
     let uploadQueue: UploadQueue?
+    let soundService: SoundService?
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -64,12 +67,14 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
 
         let coordinator = context.coordinator
         coordinator.pageViewController = pvc
+        coordinator.soundService = soundService
         coordinator.rebuild(
             articles: articles,
             filedDate: filedDate,
             onBack: onBack,
             appState: appState,
-            uploadQueue: uploadQueue
+            uploadQueue: uploadQueue,
+            soundService: soundService
         )
 
         if let first = coordinator.controller(at: 0) {
@@ -88,6 +93,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         context: Context
     ) {
         let coordinator = context.coordinator
+        coordinator.soundService = soundService
         let currentIDs = articles.map(\.id)
         guard coordinator.articleIDs != currentIDs else { return }
 
@@ -96,7 +102,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             filedDate: filedDate,
             onBack: onBack,
             appState: appState,
-            uploadQueue: uploadQueue
+            uploadQueue: uploadQueue,
+            soundService: soundService
         )
         let safeIndex = min(
             coordinator.currentIndex,
@@ -121,6 +128,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
     {
         weak var pageViewController: UIPageViewController?
         var currentIndex = 0
+        var soundService: SoundService?
         private(set) var articleIDs: [String] = []
         private var controllers: [UIViewController] = []
 
@@ -133,7 +141,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             filedDate: Date?,
             onBack: @escaping () -> Void,
             appState: AppState,
-            uploadQueue: UploadQueue?
+            uploadQueue: UploadQueue?,
+            soundService: SoundService?
         ) {
             articleIDs = articles.map(\.id)
             controllers = []
@@ -141,7 +150,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
             let cover = hosting(
                 CoverPageView(filedDate: filedDate, onBack: onBack),
                 appState: appState,
-                uploadQueue: uploadQueue
+                uploadQueue: uploadQueue,
+                soundService: soundService
             )
             controllers.append(cover)
 
@@ -160,7 +170,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                     let vc = hosting(
                         ContractPageView(page: page),
                         appState: appState,
-                        uploadQueue: uploadQueue
+                        uploadQueue: uploadQueue,
+                        soundService: soundService
                     )
                     articleControllers.append(vc)
                 }
@@ -174,7 +185,8 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                     self?.jumpTo(pageIndex)
                 },
                 appState: appState,
-                uploadQueue: uploadQueue
+                uploadQueue: uploadQueue,
+                soundService: soundService
             )
             controllers.append(toc)
             controllers.append(contentsOf: articleControllers)
@@ -221,15 +233,30 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
         private func hosting<V: View>(
             _ view: V,
             appState: AppState,
-            uploadQueue: UploadQueue?
+            uploadQueue: UploadQueue?,
+            soundService: SoundService?
         ) -> UIViewController {
-            if let uploadQueue {
+            switch (uploadQueue, soundService) {
+            case let (uq?, ss?):
                 return UIHostingController(
                     rootView: view
                         .environment(appState)
-                        .environment(uploadQueue)
+                        .environment(uq)
+                        .environment(ss)
                 )
-            } else {
+            case let (uq?, nil):
+                return UIHostingController(
+                    rootView: view
+                        .environment(appState)
+                        .environment(uq)
+                )
+            case let (nil, ss?):
+                return UIHostingController(
+                    rootView: view
+                        .environment(appState)
+                        .environment(ss)
+                )
+            case (nil, nil):
                 return UIHostingController(
                     rootView: view.environment(appState)
                 )
@@ -271,6 +298,7 @@ private struct PageCurlContainer: UIViewControllerRepresentable {
                   let index = controllers.firstIndex(of: visible)
             else { return }
             currentIndex = index
+            soundService?.play(.pageTurn)
         }
     }
 }

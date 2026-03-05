@@ -11,6 +11,7 @@ struct SignaturePadView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(UploadQueue.self) private var uploadQueue: UploadQueue?
+    @Environment(SoundService.self) private var soundService: SoundService?
 
     #if canImport(PencilKit)
     @State private var drawing = PKDrawing()
@@ -166,6 +167,10 @@ struct SignaturePadView: View {
 
         hasSubmitted = true
         uploadQueue?.enqueue(contentId: contentId, signer: signer)
+
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        soundService?.play(.signaturePlaced)
+
         onSigned(.now)
         dismiss()
     }

@@ -3,22 +3,53 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppState.self) private var appState
     @Environment(Router.self) private var router
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var showSettings = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerSection
-                .padding(.bottom, Theme.Spacing.xl)
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    headerSection
+                        .padding(.bottom, Theme.Spacing.xl)
 
-            cardSection
+                    cardSection
 
-            Spacer(minLength: 0)
+                    Spacer(minLength: 0)
 
-            footerSection
-                .padding(.bottom, Theme.Spacing.lg)
+                    footerSection
+                        .padding(.top, Theme.Spacing.xl)
+                        .padding(.bottom, Theme.Spacing.lg)
+                }
+                .frame(minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .topTrailing) { settingsButton }
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                SettingsView()
+            }
+        }
         .background(Theme.Colors.Background.primary, ignoresSafeAreaEdges: .all)
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    // MARK: - Settings
+
+    private var settingsButton: some View {
+        Button { showSettings = true } label: {
+            Image(systemName: "gearshape")
+                .font(.system(size: 20, weight: .regular))
+                .foregroundStyle(Theme.Colors.Text.muted)
+                .padding(Theme.Spacing.sm)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, Theme.Spacing.xxl)
+        .padding(.trailing, Theme.Spacing.lg)
+        .accessibilityLabel("Settings")
     }
 
     // MARK: - Header
@@ -55,6 +86,7 @@ struct HomeView: View {
             ) {
                 router.navigate(to: .contractBook)
             }
+            .cardParallax(reduceMotion: reduceMotion)
 
             FilingCabinetCard(
                 sectionName: "Filed Letters",
@@ -66,6 +98,7 @@ struct HomeView: View {
             ) {
                 router.navigate(to: .lettersList)
             }
+            .cardParallax(reduceMotion: reduceMotion)
 
             FilingCabinetCard(
                 sectionName: "Sealed Thoughts",
@@ -77,6 +110,7 @@ struct HomeView: View {
             ) {
                 router.navigate(to: .thoughtsList)
             }
+            .cardParallax(reduceMotion: reduceMotion)
         }
         .padding(.horizontal, Theme.Spacing.lg)
     }
@@ -102,6 +136,18 @@ struct HomeView: View {
         appState.cachedContent
             .filter { $0.type == type }
             .contains { !appState.hasBeenSeen($0.id) }
+    }
+}
+
+// MARK: - Card Parallax
+
+private extension View {
+    func cardParallax(reduceMotion: Bool) -> some View {
+        scrollTransition(.animated(.easeInOut(duration: 0.3))) { content, phase in
+            content
+                .offset(y: reduceMotion ? 0 : phase.value * 6)
+                .scaleEffect(reduceMotion ? 1 : 1 - abs(phase.value) * 0.02)
+        }
     }
 }
 
