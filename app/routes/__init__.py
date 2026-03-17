@@ -18,6 +18,7 @@ def build_api_router() -> APIRouter:
     All routes under this router require Bearer authentication.
     """
     from app.auth import require_auth
+    from app.routes.comments import router as comments_router
     from app.routes.content import router as content_router
     from app.routes.devices import router as devices_router
     from app.routes.signatures import router as signatures_router
@@ -25,5 +26,6 @@ def build_api_router() -> APIRouter:
     api_router = APIRouter(dependencies=[Depends(require_auth)])
     api_router.include_router(content_router)
     api_router.include_router(signatures_router)
+    api_router.include_router(comments_router)
     api_router.include_router(devices_router)
     return api_router

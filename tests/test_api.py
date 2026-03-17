@@ -388,6 +388,179 @@ class TestDeviceTokens:
         assert response.json()["signer"] == "carolina"
 
 
+class TestComments:
+    def test_create_comment_success(self, app_client: tuple[TestClient, Path]) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="letter")
+        response = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": "Beautiful."},
+            headers=_auth_headers("dinesh"),
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["content_id"] == cid
+        assert data["signer"] == "dinesh"
+        assert data["body"] == "Beautiful."
+        assert "created_at" in data
+
+    def test_create_comment_duplicate_returns_409(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="letter")
+        client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": "First."},
+            headers=_auth_headers("dinesh"),
+        )
+        response = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": "Second."},
+            headers=_auth_headers("dinesh"),
+        )
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "ALREADY_COMMENTED"
+
+    def test_create_comment_wrong_signer_returns_400(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="letter")
+        response = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "carolina", "body": "Nope."},
+            headers=_auth_headers("dinesh"),
+        )
+        assert response.status_code == 400
+        assert response.json()["error"]["code"] == "INVALID_SIGNER"
+
+    def test_create_comment_on_contract_returns_422(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="contract")
+        response = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": "No."},
+            headers=_auth_headers("dinesh"),
+        )
+        assert response.status_code == 422
+        assert response.json()["error"]["code"] == "INVALID_CONTENT_TYPE"
+
+    def test_create_comment_nonexistent_content_returns_404(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, _ = app_client
+        response = client.post(
+            "/comments",
+            json={"content_id": "missing", "signer": "dinesh", "body": "X"},
+            headers=_auth_headers("dinesh"),
+        )
+        assert response.status_code == 404
+
+    def test_create_comment_empty_body_returns_422(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="thought")
+        response = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": ""},
+            headers=_auth_headers("dinesh"),
+        )
+        assert response.status_code == 422
+
+    def test_create_comment_exceeds_max_length_returns_422(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="letter")
+        response = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": "x" * 2001},
+            headers=_auth_headers("dinesh"),
+        )
+        assert response.status_code == 422
+
+    def test_get_content_comments_empty(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="letter")
+        response = client.get(f"/content/{cid}/comments", headers=_auth_headers())
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_get_content_comments_returns_filed(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="thought")
+        client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": "Noted."},
+            headers=_auth_headers("dinesh"),
+        )
+        response = client.get(f"/content/{cid}/comments", headers=_auth_headers())
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["body"] == "Noted."
+
+    def test_create_comment_writes_sync_log(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="letter")
+        response = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": "Logged."},
+            headers=_auth_headers("dinesh"),
+        )
+        assert response.status_code == 201
+        comment_id = response.json()["id"]
+        conn = sqlite3.connect(str(db_path))
+        row = conn.execute(
+            "SELECT entity_type, entity_id, action FROM sync_log WHERE entity_id = ?",
+            (comment_id,),
+        ).fetchone()
+        conn.close()
+        assert row is not None
+        assert row[0] == "comment"
+        assert row[2] == "create"
+
+    def test_both_signers_can_comment_on_same_content(
+        self, app_client: tuple[TestClient, Path]
+    ) -> None:
+        client, db_path = app_client
+        cid = str(uuid.uuid4())
+        _seed_content(db_path, cid, content_type="letter")
+        r1 = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "dinesh", "body": "Mine."},
+            headers=_auth_headers("dinesh"),
+        )
+        r2 = client.post(
+            "/comments",
+            json={"content_id": cid, "signer": "carolina", "body": "Yours."},
+            headers=_auth_headers("carolina"),
+        )
+        assert r1.status_code == 201
+        assert r2.status_code == 201
+        response = client.get(f"/content/{cid}/comments", headers=_auth_headers())
+        assert len(response.json()) == 2
+
+
 class TestErrorEnvelope:
     def test_404_uses_standard_envelope(
         self, app_client: tuple[TestClient, Path]

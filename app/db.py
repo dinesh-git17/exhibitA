@@ -29,6 +29,15 @@ CREATE TABLE IF NOT EXISTS signatures (
     UNIQUE(content_id, signer)
 );
 
+CREATE TABLE IF NOT EXISTS comments (
+    id TEXT PRIMARY KEY,
+    content_id TEXT NOT NULL REFERENCES content(id),
+    signer TEXT NOT NULL CHECK(signer IN ('dinesh', 'carolina')),
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(content_id, signer)
+);
+
 CREATE TABLE IF NOT EXISTS sync_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     entity_type TEXT NOT NULL,
@@ -62,6 +71,7 @@ _INDEX_SQL = """\
 CREATE INDEX IF NOT EXISTS idx_content_type ON content(type);
 CREATE INDEX IF NOT EXISTS idx_content_order ON content(type, section_order);
 CREATE INDEX IF NOT EXISTS idx_signatures_content ON signatures(content_id);
+CREATE INDEX IF NOT EXISTS idx_comments_content ON comments(content_id);
 CREATE INDEX IF NOT EXISTS idx_sync_log_time ON sync_log(occurred_at);
 """
 

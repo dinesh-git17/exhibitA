@@ -105,6 +105,22 @@
   </div>
 </form>
 
+{% if item and comments is defined %}
+<div class="form-group" style="margin-top:2rem;">
+  <h2 style="font-size:1.1rem; margin-bottom:0.75rem;">Filed Responses</h2>
+  {% if comments %}
+    {% for c in comments %}
+    <div style="border-left:3px solid #A8405A; padding:0.5rem 1rem; margin-bottom:0.75rem; background:rgba(168,64,90,0.06); border-radius:0 6px 6px 0;">
+      <div style="font-size:0.8rem; color:#786B60; margin-bottom:0.25rem;">{{ c.signer | capitalize }} &mdash; {{ c.created_at }}</div>
+      <div style="font-size:0.95rem;">{{ c.body }}</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:#786B60; font-style:italic;">No responses filed.</p>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if item %}
 <form class="delete-inline" method="post" action="/admin/content/{{ item.id }}/delete"
       onsubmit="return confirm('This will remove the filing from the record. Are you sure, counselor?')"

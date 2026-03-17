@@ -144,6 +144,37 @@ actor ExhibitAClient {
         return try decode(from: data)
     }
 
+    // MARK: - Comments
+
+    func fetchComments(contentId: String) async throws(APIError) -> [CommentRecord] {
+        let request = try makeAuthenticatedRequest(path: "/content/\(contentId)/comments")
+        let (data, response) = try await performRequest(request)
+        try validateStatus(response, data: data)
+        return try decode(from: data)
+    }
+
+    func createComment(
+        contentId: String,
+        signer: String,
+        body: String,
+    )
+        async throws(APIError) -> CommentRecord
+    {
+        var request = try makeAuthenticatedRequest(path: "/comments", method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let payload = CommentCreateRequest(contentId: contentId, signer: signer, body: body)
+        do {
+            request.httpBody = try encoder.encode(payload)
+        } catch {
+            throw .decodingFailure(context: "CommentCreateRequest encoding")
+        }
+
+        let (data, response) = try await performRequest(request)
+        try validateStatus(response, data: data)
+        return try decode(from: data)
+    }
+
     // MARK: - Sync
 
     func fetchSyncChanges(since: Date? = nil) async throws(APIError) -> [SyncEntry] {

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ThoughtDetailView: View {
     let id: String
+    let client: ExhibitAClient
     @Environment(AppState.self) private var appState
 
     private var thought: ContentItem? {
@@ -9,12 +10,14 @@ struct ThoughtDetailView: View {
     }
 
     var body: some View {
-        Group {
+        ZStack {
+            Theme.Colors.Background.reading
+                .ignoresSafeArea()
+
             if let thought {
                 readerContent(thought)
             }
         }
-        .background(Theme.Colors.Background.reading, ignoresSafeAreaEdges: .all)
         .paperNoise()
         .toolbarBackground(Theme.Colors.Background.reading, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -25,23 +28,64 @@ struct ThoughtDetailView: View {
     // MARK: - Reader Content
 
     private func readerContent(_ thought: ContentItem) -> some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                Text(formattedDateTime(for: thought))
-                    .font(Theme.Typography.metadata)
-                    .foregroundStyle(Theme.Colors.Text.muted)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Text(formattedDateTime(for: thought))
+                        .font(Theme.Typography.metadata)
+                        .foregroundStyle(Theme.Colors.Text.muted)
 
-                Text(thought.body)
-                    .font(Theme.Typography.contractBody)
-                    .foregroundStyle(Theme.Colors.Text.reading)
-                    .lineSpacing(Self.bodyLineSpacing)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, Theme.Spacing.lg)
+                    Text(thought.body)
+                        .font(Theme.Typography.contractBody)
+                        .foregroundStyle(Theme.Colors.Text.reading)
+                        .lineSpacing(Self.bodyLineSpacing)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, Theme.Spacing.lg)
+
+                    responseSection(thought)
+                        .padding(.top, Theme.Spacing.lg)
+                        .id("response")
+                }
+                .padding(.horizontal, Theme.Spacing.xl)
+                .padding(.vertical, Theme.Spacing.xxl)
+                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, Theme.Spacing.xl)
-            .padding(.vertical, Theme.Spacing.xxl)
-            .frame(maxWidth: .infinity)
+            .scrollDismissesKeyboard(.interactively)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.3)) {
+                    proxy.scrollTo("response", anchor: .bottom)
+                }
+            }
+        }
+    }
+
+    // MARK: - Response Section
+
+    @ViewBuilder
+    private func responseSection(_ thought: ContentItem) -> some View {
+        let responses = appState.commentsForContent(thought.id)
+        let hasMyComment = appState.comment(
+            forContentId: thought.id,
+            signer: Config.signerIdentity
+        ) != nil
+
+        if !responses.isEmpty || !hasMyComment {
+            VStack(spacing: Theme.Spacing.md) {
+                Rectangle()
+                    .fill(Theme.Colors.Accent.gold.opacity(0.3))
+                    .frame(height: Theme.Dividers.hairline)
+                    .accessibilityHidden(true)
+
+                ForEach(responses) { comment in
+                    ResponseOnRecordView(comment: comment)
+                }
+
+                if !hasMyComment {
+                    CommentComposeView(contentId: thought.id, client: client)
+                }
+            }
+            .multilineTextAlignment(.center)
         }
     }
 
@@ -65,6 +109,7 @@ struct ThoughtDetailView: View {
         guard !appState.hasBeenSeen(id) else { return }
         appState.markSeen(id)
     }
+
 }
 
 // MARK: - Previews
@@ -92,7 +137,7 @@ struct ThoughtDetailView: View {
     ])
 
     NavigationStack {
-        ThoughtDetailView(id: "thought-1")
+        ThoughtDetailView(id: "thought-1", client: ExhibitAClient(baseURL: URL(string: "https://localhost")!))
     }
     .environment(state)
     .environment(Router())
@@ -121,7 +166,7 @@ struct ThoughtDetailView: View {
     ])
 
     NavigationStack {
-        ThoughtDetailView(id: "thought-1")
+        ThoughtDetailView(id: "thought-1", client: ExhibitAClient(baseURL: URL(string: "https://localhost")!))
     }
     .environment(state)
     .environment(Router())
@@ -163,7 +208,7 @@ struct ThoughtDetailView: View {
     ])
 
     NavigationStack {
-        ThoughtDetailView(id: "thought-1")
+        ThoughtDetailView(id: "thought-1", client: ExhibitAClient(baseURL: URL(string: "https://localhost")!))
     }
     .environment(state)
     .environment(Router())
@@ -192,7 +237,7 @@ struct ThoughtDetailView: View {
     ])
 
     NavigationStack {
-        ThoughtDetailView(id: "thought-1")
+        ThoughtDetailView(id: "thought-1", client: ExhibitAClient(baseURL: URL(string: "https://localhost")!))
     }
     .environment(state)
     .environment(Router())

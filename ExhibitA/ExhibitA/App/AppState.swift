@@ -19,6 +19,12 @@ import Foundation
         didSet { persistSeenContentIDs() }
     }
 
+    // MARK: - Comment State
+
+    private(set) var cachedComments: [String: CommentRecord] = [:] {
+        didSet { persistComments() }
+    }
+
     // MARK: - Signature State
 
     private(set) var signedSignatures: [String: Date] = [:] {
@@ -34,6 +40,7 @@ import Foundation
         lastSyncAt = defaults.object(forKey: StorageKey.lastSyncAt) as? Date
         seenContentIDs = Self.loadSeenContentIDs(from: defaults)
         signedSignatures = Self.loadSignedSignatures(from: defaults)
+        cachedComments = Self.loadComments(from: defaults)
     }
 
     // MARK: - Unread API
@@ -48,6 +55,26 @@ import Foundation
 
     func updateCachedContent(_ items: [ContentItem]) {
         cachedContent = items
+    }
+
+    // MARK: - Comment API
+
+    func commentsForContent(_ contentId: String) -> [CommentRecord] {
+        cachedComments.values
+            .filter { $0.contentId == contentId }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    func comment(forContentId contentId: String, signer: String) -> CommentRecord? {
+        cachedComments[commentKey(contentId: contentId, signer: signer)]
+    }
+
+    func cacheComment(_ comment: CommentRecord) {
+        cachedComments[commentKey(contentId: comment.contentId, signer: comment.signer)] = comment
+    }
+
+    private func commentKey(contentId: String, signer: String) -> String {
+        "\(contentId)_\(signer)"
     }
 
     // MARK: - Signature API
@@ -84,6 +111,20 @@ import Foundation
         return decoded
     }
 
+    private func persistComments() {
+        guard let data = try? JSONEncoder().encode(cachedComments) else { return }
+        defaults.set(data, forKey: StorageKey.cachedComments)
+    }
+
+    private static func loadComments(from defaults: UserDefaults) -> [String: CommentRecord] {
+        guard let data = defaults.data(forKey: StorageKey.cachedComments),
+              let decoded = try? JSONDecoder().decode([String: CommentRecord].self, from: data)
+        else {
+            return [:]
+        }
+        return decoded
+    }
+
     private func persistSignedSignatures() {
         guard let data = try? JSONEncoder().encode(signedSignatures) else { return }
         defaults.set(data, forKey: StorageKey.signedSignatures)
@@ -103,4 +144,5 @@ private enum StorageKey {
     static let lastSyncAt = "exhibit_a_last_sync_at"
     static let seenContentIDs = "exhibit_a_seen_content_ids"
     static let signedSignatures = "exhibit_a_signed_signatures"
+    static let cachedComments = "exhibit_a_cached_comments"
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LetterDetailView: View {
     let id: String
+    let client: ExhibitAClient
     @Environment(AppState.self) private var appState
 
     private var letter: ContentItem? {
@@ -9,12 +10,14 @@ struct LetterDetailView: View {
     }
 
     var body: some View {
-        Group {
+        ZStack {
+            Theme.Colors.Background.reading
+                .ignoresSafeArea()
+
             if let letter {
                 readerContent(letter)
             }
         }
-        .background(Theme.Colors.Background.reading, ignoresSafeAreaEdges: .all)
         .paperNoise()
         .toolbarBackground(Theme.Colors.Background.reading, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -25,22 +28,34 @@ struct LetterDetailView: View {
     // MARK: - Reader Content
 
     private func readerContent(_ letter: ContentItem) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                headerSection(letter)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    headerSection(letter)
 
-                separator
-                    .padding(.top, Theme.Spacing.md)
+                    separator
+                        .padding(.top, Theme.Spacing.md)
 
-                bodySection(letter)
-                    .padding(.top, Theme.Spacing.lg)
+                    bodySection(letter)
+                        .padding(.top, Theme.Spacing.lg)
 
-                footerSection(letter)
-                    .padding(.top, Theme.Spacing.xxl)
-                    .padding(.bottom, Theme.Spacing.xl)
+                    footerSection(letter)
+                        .padding(.top, Theme.Spacing.xxl)
+
+                    responseSection(letter)
+                        .padding(.top, Theme.Spacing.lg)
+                        .padding(.bottom, Theme.Spacing.xl)
+                        .id("response")
+                }
+                .padding(.horizontal, Theme.Spacing.readingHorizontal)
+                .padding(.top, Theme.Spacing.xl)
             }
-            .padding(.horizontal, Theme.Spacing.readingHorizontal)
-            .padding(.top, Theme.Spacing.xl)
+            .scrollDismissesKeyboard(.interactively)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.3)) {
+                    proxy.scrollTo("response", anchor: .bottom)
+                }
+            }
         }
     }
 
@@ -106,6 +121,38 @@ struct LetterDetailView: View {
             .accessibilityHidden(true)
     }
 
+    // MARK: - Response Section
+
+    @ViewBuilder
+    private func responseSection(_ letter: ContentItem) -> some View {
+        let responses = appState.commentsForContent(letter.id)
+        let hasMyComment = appState.comment(
+            forContentId: letter.id,
+            signer: Config.signerIdentity
+        ) != nil
+
+        if !responses.isEmpty || !hasMyComment {
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                goldSeparator
+
+                ForEach(responses) { comment in
+                    ResponseOnRecordView(comment: comment)
+                }
+
+                if !hasMyComment {
+                    CommentComposeView(contentId: letter.id, client: client)
+                }
+            }
+        }
+    }
+
+    private var goldSeparator: some View {
+        Rectangle()
+            .fill(Theme.Colors.Accent.gold.opacity(0.3))
+            .frame(height: Theme.Dividers.hairline)
+            .accessibilityHidden(true)
+    }
+
     // MARK: - Markdown Rendering
 
     private static let bodyFontSize: CGFloat = 18
@@ -148,6 +195,7 @@ struct LetterDetailView: View {
         guard !appState.hasBeenSeen(id) else { return }
         appState.markSeen(id)
     }
+
 }
 
 // MARK: - Previews
@@ -188,7 +236,7 @@ struct LetterDetailView: View {
     ])
 
     NavigationStack {
-        LetterDetailView(id: "letter-1")
+        LetterDetailView(id: "letter-1", client: ExhibitAClient(baseURL: URL(string: "https://localhost")!))
     }
     .environment(state)
     .environment(Router())
@@ -226,7 +274,7 @@ struct LetterDetailView: View {
     ])
 
     NavigationStack {
-        LetterDetailView(id: "letter-1")
+        LetterDetailView(id: "letter-1", client: ExhibitAClient(baseURL: URL(string: "https://localhost")!))
     }
     .environment(state)
     .environment(Router())
@@ -288,7 +336,7 @@ struct LetterDetailView: View {
     ])
 
     NavigationStack {
-        LetterDetailView(id: "letter-1")
+        LetterDetailView(id: "letter-1", client: ExhibitAClient(baseURL: URL(string: "https://localhost")!))
     }
     .environment(state)
     .environment(Router())

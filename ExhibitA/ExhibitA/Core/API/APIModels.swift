@@ -82,6 +82,22 @@ nonisolated struct DeviceTokenResponse: Decodable, Sendable {
     let registeredAt: Date
 }
 
+// MARK: - Comments
+
+nonisolated struct CommentRecord: Codable, Sendable, Identifiable {
+    let id: String
+    let contentId: String
+    let signer: String
+    let body: String
+    let createdAt: Date
+}
+
+nonisolated struct CommentCreateRequest: Encodable, Sendable {
+    let contentId: String
+    let signer: String
+    let body: String
+}
+
 // MARK: - Error Envelope
 
 nonisolated struct APIErrorEnvelope: Decodable, Sendable {

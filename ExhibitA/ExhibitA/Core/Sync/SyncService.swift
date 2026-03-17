@@ -42,6 +42,7 @@ final class SyncService {
 
         appState.updateCachedContent(allContent)
         await hydrateSignatures(content: allContent)
+        await hydrateComments(content: allContent)
         appState.lastSyncAt = .now
     }
 
@@ -102,6 +103,7 @@ final class SyncService {
         appState.updateCachedContent(allContent)
 
         await hydrateSignatures(content: allContent)
+        await hydrateComments(content: allContent)
 
         appState.lastSyncAt = .now
 
@@ -178,6 +180,26 @@ final class SyncService {
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // MARK: - Comment Hydration
+
+    private func hydrateComments(content: [ContentItem]) async {
+        let commentable = content.filter { $0.type == .letter || $0.type == .thought }
+        guard !commentable.isEmpty else { return }
+
+        await withTaskGroup(of: [CommentRecord].self) { group in
+            for item in commentable {
+                group.addTask {
+                    (try? await self.client.fetchComments(contentId: item.id)) ?? []
+                }
+            }
+            for await records in group {
+                for record in records {
+                    appState.cacheComment(record)
                 }
             }
         }
