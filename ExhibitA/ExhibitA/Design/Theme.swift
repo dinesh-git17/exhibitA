@@ -9,51 +9,51 @@ enum Theme {
 
     enum Colors {
         enum Background {
-            /// Warm ivory #F2EFEA / dark #1A1614
+            /// Warm ivory #F2EFEA / dark #16120F
             static var primary: Color {
                 Color("BackgroundPrimary")
             }
 
-            /// Paper-like sepia #F8F1E3 / dark #22201C
+            /// Paper-like sepia #F8F1E3 / dark #251E1A
             static var reading: Color {
                 Color("BackgroundReading")
             }
 
-            /// Elevated cards #F3ECE4 / dark #2A2622
+            /// Elevated cards #F3ECE4 / dark #2E2520
             static var secondary: Color {
                 Color("BackgroundSecondary")
             }
 
-            /// Callouts, pull quotes #E7DECD / dark #38322C
+            /// Callouts, pull quotes #E7DECD / dark #3D322A
             static var tertiary: Color {
                 Color("BackgroundTertiary")
             }
         }
 
         enum Text {
-            /// Near-black #1A1A1A / warm off-white #E8E4DF
+            /// Near-black #1A1A1A / warm off-white #F0EBE3
             static var primary: Color {
                 Color("TextPrimary")
             }
 
-            /// Warm dark brown #2C2118 / warm cream #DCD5CA
+            /// Warm dark brown #2C2118 / warm cream #E4DDD2
             static var reading: Color {
                 Color("TextReading")
             }
 
-            /// Sepia brown #5F4B32 / warm muted #A89882
+            /// Sepia brown #5F4B32 / warm muted #B5A48C
             static var secondary: Color {
                 Color("TextSecondary")
             }
 
-            /// Warm gray-brown #8C7B6B / muted #6B6058
+            /// Warm gray-brown #8C7B6B / muted #786B60
             static var muted: Color {
                 Color("TextMuted")
             }
         }
 
         enum Accent {
-            /// Burgundy #800020 / lifted #C4526A
+            /// Burgundy #800020 / lifted #A8405A
             static var primary: Color {
                 Color("AccentPrimary")
             }
@@ -63,19 +63,19 @@ enum Theme {
                 Color("AccentWarm")
             }
 
-            /// Dusty rose #DCA1A1 / lifted #E0B5A8
+            /// Dusty rose #DCA1A1 / lifted #D4A899
             static var soft: Color {
                 Color("AccentSoft")
             }
 
-            /// Muted literary gold #CBB674 / lifted #D4C484
+            /// Muted literary gold #CBB674 / lifted #D4B060
             static var gold: Color {
                 Color("AccentGold")
             }
         }
 
         enum Border {
-            /// Hairline separator #D6CFC5 / dark #3D362F
+            /// Hairline separator #D6CFC5 / dark #453C34
             static var separator: Color {
                 Color("BorderSeparator")
             }

@@ -14,7 +14,10 @@ struct ThoughtDetailView: View {
                 readerContent(thought)
             }
         }
-        .background(Theme.Colors.Background.primary, ignoresSafeAreaEdges: .all)
+        .background(Theme.Colors.Background.reading, ignoresSafeAreaEdges: .all)
+        .paperNoise()
+        .toolbarBackground(Theme.Colors.Background.reading, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { markAsRead() }
     }

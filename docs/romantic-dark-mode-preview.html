@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exhibit A - Romantic Dark Mode Design Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+
+  :root {
+    /* CURRENT dark palette */
+    --cur-bg-primary: #1A1614;
+    --cur-bg-reading: #22201C;
+    --cur-bg-secondary: #2A2622;
+    --cur-bg-tertiary: #38322C;
+    --cur-text-primary: #E8E4DF;
+    --cur-text-reading: #DCD5CA;
+    --cur-text-secondary: #A89882;
+    --cur-text-muted: #6B6058;
+    --cur-accent-primary: #C4526A;
+    --cur-accent-warm: #C8805E;
+    --cur-accent-soft: #E0B5A8;
+    --cur-accent-gold: #D4C484;
+    --cur-border: #3D362F;
+
+    /* PROPOSED dark palette */
+    --bg-primary: #16120F;
+    --bg-reading: #251E1A;
+    --bg-secondary: #2E2520;
+    --bg-tertiary: #3D322A;
+    --text-primary: #F0EBE3;
+    --text-reading: #E4DDD2;
+    --text-secondary: #B5A48C;
+    --text-muted: #786B60;
+    --accent-primary: #A8405A;
+    --accent-warm: #C8805E;
+    --accent-soft: #D4A899;
+    --accent-gold: #D4B060;
+    --border-separator: #453C34;
+    --card-glow: rgba(168, 64, 90, 0.07);
+
+    /* Light reference */
+    --light-bg-primary: #F2EFEA;
+    --light-bg-reading: #F8F1E3;
+    --light-bg-secondary: #F3ECE4;
+    --light-text-primary: #1A1A1A;
+    --light-text-reading: #2C2118;
+    --light-accent-primary: #800020;
+    --light-accent-gold: #CBB674;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .serif { font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; }
+
+  /* ===== LAYOUT ===== */
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  section {
+    padding: 80px 0;
+    border-bottom: 1px solid var(--border-separator);
+  }
+
+  section:last-child { border-bottom: none; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  .section-subtitle {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin-bottom: 48px;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+
+  /* ===== HERO ===== */
+
+  .hero {
+    padding: 120px 0 80px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-separator);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(168, 64, 90, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero-monogram {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--accent-primary);
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent-soft);
+  }
+
+  .hero p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ===== PALETTE COMPARISON ===== */
+
+  .palette-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .palette-column h3 {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-separator);
+  }
+
+  .swatch-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .swatch {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .swatch-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .swatch-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .swatch-hex {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .swatch-use {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .swatch-arrow {
+    color: var(--accent-gold);
+    font-size: 18px;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+
+  .comparison-row {
+    display: grid;
+    grid-template-columns: 1fr 32px 1fr;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+  }
+
+  .comparison-row .swatch-row { margin-bottom: 0; }
+
+  /* ===== COMPONENT SHOWCASE ===== */
+
+  .showcase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .showcase-item {
+    padding: 32px;
+    border-radius: 16px;
+    position: relative;
+  }
+
+  .showcase-item.bg-primary { background: var(--bg-primary); border: 1px solid var(--border-separator); }
+  .showcase-item.bg-reading { background: var(--bg-reading); border: 1px solid var(--border-separator); }
+  .showcase-item.bg-secondary { background: var(--bg-secondary); border: 1px solid var(--card-glow); box-shadow: 0 0 20px var(--card-glow); }
+  .showcase-item.bg-tertiary { background: var(--bg-tertiary); border: 1px solid var(--border-separator); }
+
+  .showcase-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-separator);
+  }
+
+  .showcase-callout {
+    font-size: 11px;
+    color: var(--accent-warm);
+    margin-top: 16px;
+    padding: 8px 12px;
+    background: rgba(200, 128, 94, 0.08);
+    border-radius: 8px;
+    border-left: 2px solid var(--accent-warm);
+  }
+
+  /* ===== CARD COMPONENT ===== */
+
+  .filing-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    border: 1px solid var(--card-glow);
+    box-shadow: 0 0 24px var(--card-glow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+  }
+
+  .filing-card:hover {
+    transform: scale(0.98);
+    box-shadow: 0 0 32px rgba(168, 64, 90, 0.10);
+  }
+
+  .filing-card-icon {
+    font-size: 22px;
+    width: 32px;
+    text-align: center;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+
+  .filing-card-content { flex: 1; }
+
+  .filing-card-section {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .filing-card-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .filing-card-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    flex-shrink: 0;
+    margin-top: 6px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+
+  .filing-card-flat {
+    background: var(--cur-bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    border: none;
+    box-shadow: none;
+    opacity: 0.85;
+  }
+
+  .filing-card-flat .filing-card-section { color: var(--cur-text-secondary); }
+  .filing-card-flat .filing-card-label { color: var(--cur-text-primary); }
+  .filing-card-flat .filing-card-subtitle { color: var(--cur-text-muted); }
+
+  /* ===== TEXT HIERARCHY ===== */
+
+  .text-hierarchy {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .text-sample {
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .text-sample:last-child { border-bottom: none; }
+
+  .text-sample-meta {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  /* ===== BUTTON STYLES ===== */
+
+  .button-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+    font-family: inherit;
+  }
+
+  .btn-warm {
+    background: var(--accent-warm);
+    color: var(--bg-primary);
+  }
+
+  .btn-warm:hover { opacity: 0.85; }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--accent-warm);
+    border: 1px solid var(--accent-warm);
+  }
+
+  .btn-outline:hover { background: rgba(200, 128, 94, 0.1); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+  }
+
+  .btn-ghost:hover { color: var(--text-primary); }
+
+  /* ===== DIVIDER SHOWCASE ===== */
+
+  .divider-gold {
+    height: 0.5px;
+    background: var(--accent-gold);
+    width: 100px;
+    margin: 0 auto;
+    opacity: 0.4;
+  }
+
+  .divider-warm {
+    height: 0.5px;
+    background: var(--border-separator);
+    width: 100%;
+  }
+
+  /* ===== CONTRACT PREVIEW ===== */
+
+  .contract-surface {
+    background: var(--bg-reading);
+    border-radius: 16px;
+    padding: 56px 40px;
+    position: relative;
+    overflow: hidden;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .contract-surface::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 20%, rgba(212, 176, 96, 0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .contract-surface .noise-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  .contract-inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .contract-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+    margin-bottom: 40px;
+  }
+
+  .contract-party {
+    margin-bottom: 8px;
+  }
+
+  .contract-party-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+  }
+
+  .contract-party-role {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .contract-separator {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-style: italic;
+    color: var(--text-muted);
+    margin: 12px 0;
+  }
+
+  .contract-case {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 32px 0;
+  }
+
+  .contract-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 32px;
+  }
+
+  .contract-monogram {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent-primary);
+    letter-spacing: 2px;
+  }
+
+  /* contract vignette */
+  .contract-surface::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,0.12) 100%);
+    pointer-events: none;
+    border-radius: 16px;
+  }
+
+  /* ===== LETTER PREVIEW ===== */
+
+  .letter-surface {
+    background: var(--bg-reading);
+    border-radius: 16px;
+    padding: 40px 32px;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .letter-surface .noise-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  .letter-inner {
+    position: relative;
+    z-index: 1;
+  }
+
+  .exhibit-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid rgba(168, 64, 90, 0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+
+  .letter-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+
+  .letter-date {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .letter-classification {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-soft);
+    margin-bottom: 16px;
+  }
+
+  .letter-divider {
+    height: 0.5px;
+    background: var(--border-separator);
+    margin-bottom: 20px;
+  }
+
+  .letter-body {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.52;
+    color: var(--text-reading);
+  }
+
+  .letter-body p {
+    margin-bottom: 18px;
+  }
+
+  .letter-body p:last-child { margin-bottom: 0; }
+
+  .letter-body strong { color: var(--text-primary); }
+
+  .letter-body em {
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .letter-footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    position: relative;
+  }
+
+  .letter-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 0.5px;
+    background: var(--accent-gold);
+    opacity: 0.4;
+  }
+
+  .letter-footer-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--text-muted);
+  }
+
+  /* ===== SIGNATURE BLOCK ===== */
+
+  .signature-block {
+    text-align: center;
+    padding: 32px 0;
+  }
+
+  .signature-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+  }
+
+  .signature-line {
+    margin-bottom: 24px;
+  }
+
+  .signature-rule {
+    width: 180px;
+    height: 0.5px;
+    background: var(--accent-gold);
+    margin: 0 auto 8px;
+  }
+
+  .signature-rule-dotted {
+    width: 180px;
+    height: 0;
+    border-bottom: 0.5px dashed var(--accent-gold);
+    margin: 0 auto 8px;
+    opacity: 0.7;
+  }
+
+  .signature-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    color: var(--text-primary);
+  }
+
+  .signature-role {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .signature-cta {
+    font-size: 13px;
+    color: var(--accent-warm);
+    margin-top: 4px;
+    cursor: pointer;
+  }
+
+  .signature-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .signature-glow {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: radial-gradient(ellipse, rgba(212,176,96,0.06) 0%, transparent 70%);
+  }
+
+  /* ===== DO / DON'T ===== */
+
+  .do-dont-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .do-card, .dont-card {
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+  }
+
+  .do-card {
+    background: var(--bg-secondary);
+    border: 1px solid rgba(168, 64, 90, 0.12);
+  }
+
+  .dont-card {
+    background: rgba(200, 60, 60, 0.04);
+    border: 1px solid rgba(200, 60, 60, 0.15);
+  }
+
+  .do-dont-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .do-badge {
+    background: rgba(168, 64, 90, 0.15);
+    color: var(--accent-soft);
+  }
+
+  .dont-badge {
+    background: rgba(200, 60, 60, 0.15);
+    color: #E08080;
+  }
+
+  .do-dont-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-reading);
+  }
+
+  .do-dont-content strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  /* ===== COMPARISON SIDE-BY-SIDE ===== */
+
+  .side-by-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  .side-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .side-label.current {
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+  }
+
+  .side-label.proposed {
+    color: var(--accent-soft);
+    background: rgba(168, 64, 90, 0.1);
+  }
+
+  /* ===== NOTES / CALLOUTS ===== */
+
+  .repo-callout {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 10px 14px;
+    border-left: 2px solid var(--accent-gold);
+    background: rgba(212, 176, 96, 0.04);
+    border-radius: 0 8px 8px 0;
+    margin-top: 16px;
+  }
+
+  .repo-callout code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    color: var(--accent-warm);
+    background: rgba(200, 128, 94, 0.1);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ===== FINAL CLOSING ===== */
+
+  .closing-surface {
+    background: var(--bg-reading);
+    border-radius: 16px;
+    padding: 56px 40px;
+    max-width: 480px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .closing-surface::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.10) 100%);
+    pointer-events: none;
+    border-radius: 16px;
+  }
+
+  .closing-surface .noise-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  .closing-inner {
+    position: relative;
+    z-index: 1;
+  }
+
+  .closing-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+  }
+
+  .closing-body {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    line-height: 1.52;
+    color: var(--text-reading);
+    margin-bottom: 32px;
+  }
+
+  .closing-body p { margin-bottom: 18px; }
+
+  .closing-sign {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-style: italic;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+
+  .closing-names {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .closing-est {
+    font-size: 13px;
+    color: var(--accent-gold);
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+
+  /* ===== RESPONSIVE ===== */
+
+  @media (max-width: 768px) {
+    .palette-grid,
+    .showcase-grid,
+    .do-dont-grid,
+    .side-by-side {
+      grid-template-columns: 1fr;
+    }
+    .hero h1 { font-size: 30px; }
+    .section-title { font-size: 26px; }
+    .contract-surface, .letter-surface, .closing-surface { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================ -->
+<!-- HERO -->
+<!-- ============================================ -->
+
+<div class="hero">
+  <div class="container">
+    <div class="hero-monogram">EA</div>
+    <h1>Romantic Dark Mode<br>Design <em>Preview</em></h1>
+    <p>A visual guide to refining Exhibit A's dark mode from "warm dark theme" to "reading love letters by candlelight."</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- 1. PALETTE COMPARISON -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container">
+    <div class="section-label">Color System</div>
+    <div class="section-title serif">Current vs. Proposed Dark Palette</div>
+    <div class="section-subtitle">Every proposed color is warmer, deeper, or more saturated. The goal: widen luminance gaps so surfaces separate, shift undertones toward rosewood, and restore the gravity of burgundy and gold.</div>
+
+    <div style="margin-bottom: 24px;">
+      <div style="font-size: 12px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Backgrounds</div>
+
+      <div class="comparison-row">
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--cur-bg-primary);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">bg.primary</div>
+            <div class="swatch-hex">#1A1614</div>
+          </div>
+        </div>
+        <div class="swatch-arrow" style="text-align:center;">&#8594;</div>
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--bg-primary);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">bg.primary</div>
+            <div class="swatch-hex">#16120F</div>
+            <div class="swatch-use">Deeper base widens luminance range</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-row">
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--cur-bg-reading);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">bg.reading</div>
+            <div class="swatch-hex">#22201C</div>
+          </div>
+        </div>
+        <div class="swatch-arrow" style="text-align:center;">&#8594;</div>
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--bg-reading);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">bg.reading</div>
+            <div class="swatch-hex">#251E1A</div>
+            <div class="swatch-use">Rosewood shift for paper warmth</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-row">
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--cur-bg-secondary);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">bg.secondary</div>
+            <div class="swatch-hex">#2A2622</div>
+          </div>
+        </div>
+        <div class="swatch-arrow" style="text-align:center;">&#8594;</div>
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--bg-secondary);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">bg.secondary</div>
+            <div class="swatch-hex">#2E2520</div>
+            <div class="swatch-use">Cards visibly lift from base</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-row">
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--cur-bg-tertiary);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">bg.tertiary</div>
+            <div class="swatch-hex">#38322C</div>
+          </div>
+        </div>
+        <div class="swatch-arrow" style="text-align:center;">&#8594;</div>
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--bg-tertiary);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">bg.tertiary</div>
+            <div class="swatch-hex">#3D322A</div>
+            <div class="swatch-use">Badges and callouts gain presence</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <div style="font-size: 12px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Accents</div>
+
+      <div class="comparison-row">
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--cur-accent-primary);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">accent.primary</div>
+            <div class="swatch-hex">#C4526A <span style="color:var(--cur-accent-primary);">(pink drift)</span></div>
+          </div>
+        </div>
+        <div class="swatch-arrow" style="text-align:center;">&#8594;</div>
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--accent-primary);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">accent.primary</div>
+            <div class="swatch-hex">#A8405A <span style="color:var(--accent-primary);">(garnet)</span></div>
+            <div class="swatch-use">Restores wine-dark authority</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-row">
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--cur-accent-gold);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">accent.gold</div>
+            <div class="swatch-hex">#D4C484 <span style="color:var(--cur-accent-gold);">(pale)</span></div>
+          </div>
+        </div>
+        <div class="swatch-arrow" style="text-align:center;">&#8594;</div>
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--accent-gold);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">accent.gold</div>
+            <div class="swatch-hex">#D4B060 <span style="color:var(--accent-gold);">(candlelight)</span></div>
+            <div class="swatch-use">Signature rules gleam again</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-row">
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--cur-accent-soft);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">accent.soft</div>
+            <div class="swatch-hex">#E0B5A8</div>
+          </div>
+        </div>
+        <div class="swatch-arrow" style="text-align:center;">&#8594;</div>
+        <div class="swatch-row">
+          <div class="swatch" style="background: var(--accent-soft);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">accent.soft</div>
+            <div class="swatch-hex">#D4A899</div>
+            <div class="swatch-use">Dried-petal dusty rose, not baby pink</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="repo-callout">
+      All values live in <code>Assets.xcassets/</code> color sets and are referenced through <code>Theme.Colors.*</code> in <code>Design/Theme.swift</code>. Changing the asset catalog dark values propagates to every view automatically.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 2. COMPONENT SHOWCASE -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container">
+    <div class="section-label">Component Showcase</div>
+    <div class="section-title serif">Surface, Card & Text Treatments</div>
+    <div class="section-subtitle">Visual examples of how the proposed palette changes the feel of every surface tier, card, and text element.</div>
+
+    <div class="showcase-grid">
+      <!-- App Background -->
+      <div class="showcase-item bg-primary">
+        <div class="showcase-label">App Background - bg.primary</div>
+        <div style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">EXHIBIT A</div>
+        <div style="font-size: 13px; color: var(--text-muted);">Case No. CD-2025-0126 | Dinesh & Carolina</div>
+        <div style="margin-top: 16px; font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--accent-primary); letter-spacing: 2px;">EA</div>
+        <div class="showcase-callout">Deepest surface. No content lives directly here in reading contexts.</div>
+      </div>
+
+      <!-- Reading Surface -->
+      <div class="showcase-item bg-reading">
+        <div class="showcase-label">Reading Surface - bg.reading</div>
+        <div style="font-family: 'Playfair Display', serif; font-size: 16px; line-height: 1.52; color: var(--text-reading);">
+          Let the record show that on this day, the court finds <strong style="color:var(--text-primary);">overwhelming evidence</strong> of perfection in the defendant.
+        </div>
+        <div class="showcase-callout">Rosewood-shifted warm brown. Paper noise at 3.5% opacity. Used for letter detail, thought detail, contract pages.</div>
+      </div>
+
+      <!-- Elevated Card -->
+      <div class="showcase-item bg-secondary">
+        <div class="showcase-label">Elevated Card - bg.secondary + warm glow</div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+          <span style="font-size: 20px;">&#128214;</span>
+          <div>
+            <div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; color: var(--text-primary);">The Binding Agreement</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Governing Terms & Conditions</div>
+          </div>
+        </div>
+        <div class="showcase-callout">1px warm-glow border replaces invisible shadow. <code>rgba(accent.primary, 0.07)</code> + <code>box-shadow: 0 0 24px</code>.</div>
+      </div>
+
+      <!-- Badge Surface -->
+      <div class="showcase-item bg-primary">
+        <div class="showcase-label">Badge & Metadata Elements</div>
+        <div style="margin-bottom: 12px;">
+          <span class="exhibit-badge">EXHIBIT L-003</span>
+        </div>
+        <div style="font-size: 12px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--accent-soft); margin-bottom: 8px;">CLOSING STATEMENT</div>
+        <div style="font-size: 13px; color: var(--text-muted);">Filed: February 14, 2026</div>
+        <div class="showcase-callout">Badge uses <code>bg.tertiary</code> + <code>rgba(accent.primary, 0.15)</code> border for dark-mode definition.</div>
+      </div>
+    </div>
+
+    <!-- Text Hierarchy -->
+    <div style="margin-top: 48px;">
+      <div style="font-size: 12px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border-separator);">Text Hierarchy</div>
+
+      <div class="text-hierarchy">
+        <div class="text-sample">
+          <div class="text-sample-meta">App Title - 34pt Serif Bold, text.primary</div>
+          <div style="font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px;">EXHIBIT A</div>
+        </div>
+        <div class="text-sample">
+          <div class="text-sample-meta">Screen Title - 28pt Serif Bold, text.primary</div>
+          <div style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--text-primary);">CORRESPONDENCE ON RECORD</div>
+        </div>
+        <div class="text-sample">
+          <div class="text-sample-meta">Article Title - 24pt Serif Semibold, text.primary</div>
+          <div style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; color: var(--text-primary);">Closing Arguments for Why You're Perfect</div>
+        </div>
+        <div class="text-sample">
+          <div class="text-sample-meta">Body - 18pt Serif Regular, text.reading</div>
+          <div style="font-family: 'Playfair Display', serif; font-size: 16px; color: var(--text-reading); line-height: 1.52;">The prosecution presents the following exhibits: your laugh when you think nobody is listening, the way you always remember the small things.</div>
+        </div>
+        <div class="text-sample">
+          <div class="text-sample-meta">Pull Quote - 22pt Serif Italic, text.secondary</div>
+          <div style="font-family: 'Playfair Display', serif; font-size: 18px; font-style: italic; color: var(--text-secondary); line-height: 1.4;">"No refunds. No exchanges. All sales are final."</div>
+        </div>
+        <div class="text-sample">
+          <div class="text-sample-meta">Label - 13pt Sans Medium, text.secondary / Metadata - 14pt Sans, text.muted</div>
+          <div style="display: flex; gap: 24px; align-items: baseline;">
+            <span style="font-size: 12px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-secondary);">THE CONTRACT</span>
+            <span style="font-size: 13px; color: var(--text-muted);">Filed: February 14, 2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons & Accents -->
+    <div style="margin-top: 48px;">
+      <div style="font-size: 12px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border-separator);">Buttons & Accent Usage</div>
+
+      <div class="button-row" style="margin-bottom: 24px;">
+        <button class="btn btn-warm">Tap to Sign</button>
+        <button class="btn btn-outline">Refresh Content</button>
+        <button class="btn btn-ghost">Clear</button>
+      </div>
+
+      <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="unread-dot"></div>
+          <span style="font-size: 12px; color: var(--text-muted);">Unread badge</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 80px; height: 0.5px; background: var(--accent-gold);"></div>
+          <span style="font-size: 12px; color: var(--text-muted);">Gold signature rule</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 60px; height: 0; border-bottom: 0.5px dashed var(--accent-gold); opacity: 0.7;"></div>
+          <span style="font-size: 12px; color: var(--text-muted);">Dotted awaiting rule</span>
+        </div>
+      </div>
+
+      <div class="repo-callout" style="margin-top: 16px;">
+        No filled buttons exist in the app. Interactive states use <code>accent.warm</code> (terracotta) text. Card press uses opacity 0.85 + proposed scale 0.98.
+      </div>
+    </div>
+
+    <!-- Divider Treatments -->
+    <div style="margin-top: 48px;">
+      <div style="font-size: 12px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border-separator);">Divider Treatments</div>
+
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Structural separator (lists, settings rows)</div>
+          <div class="divider-warm"></div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Ceremonial gold divider (footer separators, contract closings)</div>
+          <div class="divider-gold"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 3. CARD COMPARISON -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container">
+    <div class="section-label">Card Elevation</div>
+    <div class="section-title serif">Filing Cabinet Cards: Current vs. Proposed</div>
+    <div class="section-subtitle">In dark mode, the warm shadow stack becomes invisible. The proposed treatment uses a warm-glow border + luminance-shifted surface to restore physical depth.</div>
+
+    <div class="side-by-side">
+      <!-- Current -->
+      <div>
+        <div class="side-label current">Current (shadows invisible)</div>
+        <div class="filing-card-flat">
+          <div class="filing-card-icon" style="color: var(--cur-accent-primary);">&#128214;</div>
+          <div class="filing-card-content">
+            <div class="filing-card-section">THE CONTRACT</div>
+            <div class="filing-card-label">The Binding Agreement</div>
+            <div class="filing-card-subtitle">Governing Terms & Conditions of This Relationship</div>
+          </div>
+        </div>
+        <div style="margin-top: 12px;">
+          <div class="filing-card-flat">
+            <div class="filing-card-icon" style="color: var(--cur-accent-soft);">&#9993;</div>
+            <div class="filing-card-content">
+              <div class="filing-card-section">FILED LETTERS</div>
+              <div class="filing-card-label">Correspondence on Record</div>
+              <div class="filing-card-subtitle">3 letters filed</div>
+            </div>
+          </div>
+        </div>
+        <div class="repo-callout">
+          <code>HomeView.swift:204-221</code> applies 3-layer warm shadows via <code>Theme.Shadows.card</code>. On dark backgrounds, all three layers are imperceptible.
+        </div>
+      </div>
+
+      <!-- Proposed -->
+      <div>
+        <div class="side-label proposed">Proposed (warm glow + lift)</div>
+        <div class="filing-card">
+          <div class="filing-card-icon" style="color: var(--accent-primary);">&#128214;</div>
+          <div class="filing-card-content">
+            <div class="filing-card-section">THE CONTRACT</div>
+            <div class="filing-card-label">The Binding Agreement</div>
+            <div class="filing-card-subtitle">Governing Terms & Conditions of This Relationship</div>
+          </div>
+          <div class="unread-dot"></div>
+        </div>
+        <div style="margin-top: 12px;">
+          <div class="filing-card">
+            <div class="filing-card-icon" style="color: var(--accent-soft);">&#9993;</div>
+            <div class="filing-card-content">
+              <div class="filing-card-section">FILED LETTERS</div>
+              <div class="filing-card-label">Correspondence on Record</div>
+              <div class="filing-card-subtitle">3 letters filed</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+        </div>
+        <div class="repo-callout">
+          Dark-mode elevation: 1px border <code>rgba(168,64,90,0.07)</code> + <code>box-shadow: 0 0 24px</code>. Surface bumped to <code>#2E2520</code>. Garnet accent on book icon.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 4. CONTRACT COVER PREVIEW -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container">
+    <div class="section-label">Love Contract</div>
+    <div class="section-title serif">Contract Cover Page - Proposed Treatment</div>
+    <div class="section-subtitle">The most important first impression in the app. The cover should feel like opening a leather-bound portfolio by lamplight. Subtle vignette, paper noise, and a warm radial glow center the eye.</div>
+
+    <div class="contract-surface">
+      <div class="noise-overlay"></div>
+      <div class="contract-inner">
+        <div class="contract-title">
+          THE OFFICIAL & LEGALLY<br>BINDING LOVE CONTRACT
+        </div>
+
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Between the Parties:</div>
+
+        <div class="contract-party">
+          <div class="contract-party-name">DINESH DAWONAUTH</div>
+          <div class="contract-party-role">("The Boyfriend")</div>
+        </div>
+
+        <div class="contract-separator">-- and --</div>
+
+        <div class="contract-party">
+          <div class="contract-party-name">CAROLINA LOMBARDO</div>
+          <div class="contract-party-role">("The Girlfriend")</div>
+        </div>
+
+        <div class="contract-case">
+          Case No. CD-2025-0126<br>
+          Filed: February 14, 2025<br>
+          Jurisdiction: The Supreme Court of Us
+        </div>
+
+        <div class="contract-quote">
+          "No refunds. No exchanges.<br>All sales are final."
+        </div>
+
+        <div class="contract-monogram">EA</div>
+      </div>
+    </div>
+
+    <div class="repo-callout" style="max-width: 480px; margin: 16px auto 0;">
+      <code>CoverPageView.swift</code>. Proposed additions: radial vignette (<code>::after</code> pseudo-element equivalent), warm gold radial glow at 4% over reading surface. Monogram could use <code>accent.gold</code> instead of <code>accent.primary</code> on cover only.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 5. LETTER READING PREVIEW -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container">
+    <div class="section-label">Letters</div>
+    <div class="section-title serif">Letter Reading Experience - Proposed Treatment</div>
+    <div class="section-subtitle">Letters currently use <code style="font-family: 'SF Mono', monospace; font-size: 12px; background: rgba(200,128,94,0.1); padding: 2px 6px; border-radius: 3px; color: var(--accent-warm);">background.primary</code> instead of the warmer reading surface. This upgrade adds paper noise, a rosewood-tinted background, and a gold footer separator.</div>
+
+    <div class="letter-surface">
+      <div class="noise-overlay"></div>
+      <div class="letter-inner">
+        <span class="exhibit-badge">EXHIBIT L-003</span>
+
+        <div class="letter-title">Closing Arguments for Why You're Perfect</div>
+        <div class="letter-date">Filed: February 14, 2026</div>
+        <div class="letter-classification">CLOSING STATEMENT</div>
+        <div class="letter-divider"></div>
+
+        <div class="letter-body">
+          <p>Let the record show that on this day, the court finds <strong>overwhelming evidence</strong> of perfection in the defendant.</p>
+
+          <p>The prosecution presents the following exhibits: your laugh when you think nobody is listening, the way you <em>always</em> remember the small things, and your inexplicable ability to make even Monday mornings feel bearable.</p>
+
+          <p>Furthermore, the court notes that no reasonable person could deny the warmth you bring to every room you enter. This is not hyperbole. This is <strong>documented fact</strong>.</p>
+
+          <p>In closing, the court rules unanimously and without reservation: you are, and have always been, perfect.</p>
+        </div>
+
+        <div class="letter-footer">
+          <div class="letter-footer-text">Filed with love, February 14, 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="repo-callout" style="max-width: 480px; margin: 16px auto 0;">
+      <code>LetterDetailView.swift:17</code> currently uses <code>background.primary</code>. Switch to <code>background.reading</code> + <code>.paperNoise()</code>. Add gold hairline above footer via <code>accent.gold</code> at 0.4 opacity.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 6. SIGNATURE CEREMONY -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container">
+    <div class="section-label">Signature Flow</div>
+    <div class="section-title serif">Signature Block - Enhanced Dark Treatment</div>
+    <div class="section-subtitle">Gold signature rules and the "Tap to sign" CTA must gleam on dark surfaces. The proposed gold (#D4B060) catches candlelight; the signed state gets a subtle warm glow.</div>
+
+    <div style="max-width: 480px; margin: 0 auto; background: var(--bg-reading); border-radius: 16px; padding: 40px; position: relative; overflow: hidden;">
+      <div class="noise-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.035; background-image: url(&quot;data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E&quot;); pointer-events: none;"></div>
+      <div style="position: relative; z-index: 1;">
+        <div class="signature-block">
+          <div class="signature-heading">ACKNOWLEDGED AND AGREED</div>
+
+          <div class="signature-line">
+            <div class="signature-glow">
+              <div style="font-family: 'Playfair Display', serif; font-size: 24px; font-style: italic; color: var(--text-reading); margin-bottom: 4px; transform: rotate(-2deg);">Dinesh</div>
+            </div>
+            <div class="signature-rule"></div>
+            <div class="signature-name">Dinesh Dawonauth</div>
+            <div class="signature-role">("The Boyfriend")</div>
+            <div class="signature-date">Date: February 14, 2026</div>
+          </div>
+
+          <div class="signature-line" style="margin-top: 32px;">
+            <div class="signature-rule-dotted"></div>
+            <div class="signature-name">Carolina Lombardo</div>
+            <div class="signature-role">("The Girlfriend")</div>
+            <div class="signature-cta">Tap to sign</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="repo-callout" style="max-width: 480px; margin: 16px auto 0;">
+      <code>SignatureBlockView.swift:170-174</code>. Gold rule uses <code>accent.gold</code>. Proposed: re-saturate to <code>#D4B060</code>. Signed state: add radial glow <code>rgba(212,176,96,0.06)</code> behind signature image.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 7. FINAL PAGE -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container">
+    <div class="section-label">Closing Ceremony</div>
+    <div class="section-title serif">Final Page - "In Witness Whereof"</div>
+    <div class="section-subtitle">The emotional climax of the contract book. A subtle vignette and decorative gold divider separate this page from standard article pages.</div>
+
+    <div class="closing-surface">
+      <div class="noise-overlay"></div>
+      <div class="closing-inner">
+        <div class="closing-heading">IN WITNESS WHEREOF</div>
+
+        <div class="closing-body">
+          <p>The Parties have executed this Agreement as of the date first written above, with full knowledge that they are stuck with each other.</p>
+          <p>This contract shall remain in effect in perpetuity, through every chapter still to come, and all the moments still waiting to be shared.</p>
+        </div>
+
+        <div style="margin: 24px auto; width: 80px; height: 0.5px; background: var(--accent-gold); opacity: 0.4;"></div>
+
+        <div class="closing-sign">With all my love and legal obligation,</div>
+        <div class="closing-names">Dinesh & Carolina</div>
+        <div class="closing-est">Est. 2025</div>
+      </div>
+    </div>
+
+    <div class="repo-callout" style="max-width: 480px; margin: 16px auto 0;">
+      <code>FinalPageView.swift</code>. Add decorative gold hairline between body and closing. "Est. 2025" in <code>accent.gold</code> at 0.7 opacity. Vignette via radial gradient overlay.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 8. DO / DON'T -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container">
+    <div class="section-label">Design Direction</div>
+    <div class="section-title serif">Do / Don't: Tone & Color Treatment</div>
+    <div class="section-subtitle">Guiding principles for every dark-mode design decision in Exhibit A.</div>
+
+    <div class="do-dont-grid">
+      <div class="do-card">
+        <div class="do-dont-badge do-badge">Do</div>
+        <div class="do-dont-content">
+          <strong>Use warm-tinted near-blacks</strong> with rosewood or umber undertones. Every dark surface should feel warm, like a room with wooden walls. Proposed base: <code style="font-family:monospace;font-size:12px;color:var(--accent-warm);background:rgba(200,128,94,0.1);padding:1px 4px;border-radius:3px;">#16120F</code>.
+        </div>
+      </div>
+      <div class="dont-card">
+        <div class="do-dont-badge dont-badge">Don't</div>
+        <div class="do-dont-content">
+          <strong>Use pure black (#000000) or cool-tinted dark grays.</strong> Pure black is harsh on OLED. Cool grays feel clinical. This app is intimate, not industrial.
+        </div>
+      </div>
+
+      <div class="do-card">
+        <div class="do-dont-badge do-badge">Do</div>
+        <div class="do-dont-content">
+          <strong>Keep burgundy in the garnet/rosewood range</strong> when lifting for dark mode. Target: deep enough to feel wine-dark, light enough for readability. Proposed: <span style="color:var(--accent-primary);">#A8405A</span>.
+        </div>
+      </div>
+      <div class="dont-card">
+        <div class="do-dont-badge dont-badge">Don't</div>
+        <div class="do-dont-content">
+          <strong>Let burgundy drift to medium pink or hot pink.</strong> Pink reads as playful or juvenile. The app's tone is romantic authority, not Valentine's Day card. Current dark lift <span style="color:var(--cur-accent-primary);">#C4526A</span> is too pink.
+        </div>
+      </div>
+
+      <div class="do-card">
+        <div class="do-dont-badge do-badge">Do</div>
+        <div class="do-dont-content">
+          <strong>Use luminance-based elevation</strong> in dark mode: lighter surfaces for raised elements. Supplement with 1px warm-glow borders at very low opacity. Shadows are invisible on dark backgrounds.
+        </div>
+      </div>
+      <div class="dont-card">
+        <div class="do-dont-badge dont-badge">Don't</div>
+        <div class="do-dont-content">
+          <strong>Rely on the same shadow stack that works in light mode.</strong> <code style="font-family:monospace;font-size:12px;color:#E08080;">rgba(44,33,24,0.06)</code> on a <code style="font-family:monospace;font-size:12px;color:#E08080;">#1A1614</code> background is literally invisible.
+        </div>
+      </div>
+
+      <div class="do-card">
+        <div class="do-dont-badge do-badge">Do</div>
+        <div class="do-dont-content">
+          <strong>Treat gold as a ceremonial accent.</strong> Signature rules, decorative dividers, and the "Est. 2025" date should gleam. Gold should feel like gold leaf, not beige.
+        </div>
+      </div>
+      <div class="dont-card">
+        <div class="do-dont-badge dont-badge">Don't</div>
+        <div class="do-dont-content">
+          <strong>Let gold wash out to pale yellow.</strong> On dark backgrounds, undersaturated gold loses its preciousness. It becomes another shade of tan. Re-saturate: <span style="color:var(--accent-gold);">#D4B060</span>.
+        </div>
+      </div>
+
+      <div class="do-card">
+        <div class="do-dont-badge do-badge">Do</div>
+        <div class="do-dont-content">
+          <strong>Use the reading surface for all reading content.</strong> Letters, thoughts, and contract pages should use <code style="font-family:monospace;font-size:12px;color:var(--accent-warm);background:rgba(200,128,94,0.1);padding:1px 4px;border-radius:3px;">bg.reading</code> + paper noise. Reading is a distinct mode.
+        </div>
+      </div>
+      <div class="dont-card">
+        <div class="do-dont-badge dont-badge">Don't</div>
+        <div class="do-dont-content">
+          <strong>Put reading content on the app chrome background.</strong> Letters and thoughts currently use <code style="font-family:monospace;font-size:12px;color:#E08080;">bg.primary</code>. The reading experience deserves its own warmer, textured surface.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ -->
+<!-- 9. EMOTIONAL TONE SUMMARY -->
+<!-- ============================================ -->
+
+<section>
+  <div class="container" style="text-align: center; max-width: 640px;">
+    <div class="section-label" style="text-align: center;">Guiding Metaphor</div>
+    <div class="section-title serif" style="text-align: center; margin-bottom: 32px;">The same book, read by candlelight.</div>
+
+    <div style="font-family: 'Playfair Display', serif; font-size: 18px; line-height: 1.6; color: var(--text-reading); margin-bottom: 32px;">
+      Light mode is afternoon light in a favorite library. Dark mode is evening reading by lamplight. The book doesn't change. The light does. Everything should feel warmer, closer, more intimate -- not darker, flatter, or colder.
+    </div>
+
+    <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 40px;">
+      <span style="font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-separator); color: var(--text-secondary);">Candlelit</span>
+      <span style="font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-separator); color: var(--text-secondary);">Rosewood</span>
+      <span style="font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-separator); color: var(--text-secondary);">Parchment</span>
+      <span style="font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-separator); color: var(--text-secondary);">Leather-bound</span>
+      <span style="font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-separator); color: var(--text-secondary);">Intimate</span>
+      <span style="font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-separator); color: var(--text-secondary);">Unhurried</span>
+      <span style="font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-separator); color: var(--text-secondary);">Warm gold</span>
+      <span style="font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-separator); color: var(--text-secondary);">Quiet authority</span>
+    </div>
+
+    <div style="font-size: 36px; color: var(--accent-primary); font-family: 'Playfair Display', serif; font-weight: 700; letter-spacing: 2px;">EA</div>
+    <div style="font-size: 12px; color: var(--accent-gold); opacity: 0.6; margin-top: 8px;">Est. 2025</div>
+  </div>
+</section>
+
+</body>
+</html>
