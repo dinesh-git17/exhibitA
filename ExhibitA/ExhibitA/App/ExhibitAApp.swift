@@ -13,6 +13,7 @@ struct ExhibitAApp: App {
     private let client: ExhibitAClient
     private let cache: ContentCache
     private let uploadQueue: UploadQueue
+    private let commentUploadQueue: CommentUploadQueue
     private let soundService: SoundService
 
     init() {
@@ -29,6 +30,10 @@ struct ExhibitAApp: App {
             signatureCache: SignatureCache(),
             appState: state
         )
+        commentUploadQueue = CommentUploadQueue(
+            client: apiClient,
+            appState: state
+        )
 
         soundService = SoundService()
 
@@ -39,9 +44,10 @@ struct ExhibitAApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack(path: $router.path) {
-                HomeView(onRefresh: { [syncService, uploadQueue] in
+                HomeView(onRefresh: { [syncService, uploadQueue, commentUploadQueue] in
                     await syncService.performFullSync()
                     await uploadQueue.processQueue()
+                    await commentUploadQueue.processQueue()
                 })
                     .navigationDestination(for: Router.Route.self) { route in
                         switch route {
@@ -52,15 +58,16 @@ struct ExhibitAApp: App {
                         case .thoughtsList:
                             ThoughtListView()
                         case let .letterDetail(id):
-                            LetterDetailView(id: id)
+                            LetterDetailView(id: id, client: client)
                         case let .thoughtDetail(id):
-                            ThoughtDetailView(id: id)
+                            ThoughtDetailView(id: id, client: client)
                         }
                     }
             }
             .environment(appState)
             .environment(router)
             .environment(uploadQueue)
+            .environment(commentUploadQueue)
             .environment(soundService)
             .task { await handleLaunch() }
             .onChange(of: scenePhase) { _, phase in
@@ -71,6 +78,7 @@ struct ExhibitAApp: App {
                     Task {
                         await syncService.performFullSync()
                         await uploadQueue.processQueue()
+                        await commentUploadQueue.processQueue()
                     }
                 }
             }
@@ -114,6 +122,9 @@ struct ExhibitAApp: App {
 
         await uploadQueue.processQueue()
         uploadQueue.startMonitoring()
+
+        await commentUploadQueue.processQueue()
+        commentUploadQueue.startMonitoring()
 
         await enrollPushNotifications()
     }

@@ -152,3 +152,93 @@ async def send_push(
             warnings.append(warning)
 
     return warnings
+
+
+_COMMENT_COPY: dict[str, dict[str, str]] = {
+    ContentType.LETTER: {
+        "title": "Response on Record",
+        "body": "A response has been filed on a letter.",
+    },
+    ContentType.THOUGHT: {
+        "title": "Response on Record",
+        "body": "A response has been filed on a sealed thought.",
+    },
+}
+
+
+async def send_comment_push(
+    settings: Settings,
+    db: Any,
+    *,
+    content_type: str,
+    content_id: str,
+    commenting_signer: str,
+) -> list[str]:
+    """Send APNS push to the OTHER signer when a comment is filed.
+
+    Only the non-authoring signer receives the notification.
+    """
+    client = _build_client(settings)
+    if client is None:
+        return ["APNS not configured -- comment push skipped."]
+
+    cursor = await db.execute(
+        "SELECT token FROM device_tokens WHERE signer != ?",
+        (commenting_signer,),
+    )
+    rows = await cursor.fetchall()
+    tokens: list[str] = [row["token"] for row in rows]
+
+    if not tokens:
+        _log.info("apns_comment_no_tokens", reason="no tokens for other signer")
+        return []
+
+    copy = _COMMENT_COPY.get(
+        content_type,
+        {
+            "title": "Response on Record",
+            "body": "A new response has been filed.",
+        },
+    )
+    route = _build_route(content_type, content_id)
+
+    warnings: list[str] = []
+    for token in tokens:
+        message: dict[str, Any] = {
+            "aps": {
+                "alert": {
+                    "title": copy["title"],
+                    "body": copy["body"],
+                },
+                "sound": "notif.caf",
+            },
+            "route": route,
+        }
+
+        request = NotificationRequest(
+            device_token=token,
+            message=message,
+            push_type=PushType.ALERT,
+        )
+        try:
+            result = await client.send_notification(request)
+            if not result.is_successful:
+                warning = (
+                    f"APNS comment push failed for token {token[:8]}...: "
+                    f"{result.description}"
+                )
+                _log.warning(
+                    "apns_comment_send_failed",
+                    token_prefix=token[:8],
+                    status=result.status,
+                    description=result.description,
+                )
+                warnings.append(warning)
+            else:
+                _log.info("apns_comment_send_success", token_prefix=token[:8])
+        except Exception:
+            warning = f"APNS comment connection error for token {token[:8]}..."
+            _log.exception("apns_comment_send_exception", token_prefix=token[:8])
+            warnings.append(warning)
+
+    return warnings

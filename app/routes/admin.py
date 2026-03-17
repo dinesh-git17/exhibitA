@@ -339,6 +339,13 @@ async def content_edit_form(request: Request, content_id: str) -> Response:
         else None
     )
 
+    comment_cursor = await db.execute(
+        "SELECT signer, body, created_at FROM comments "
+        "WHERE content_id = ? ORDER BY created_at",
+        (content_id,),
+    )
+    comments = [dict(r) for r in await comment_cursor.fetchall()]
+
     templates = _get_templates()
     return templates.TemplateResponse(
         request,
@@ -349,6 +356,7 @@ async def content_edit_form(request: Request, content_id: str) -> Response:
             "next_position": item_dict["section_order"],
             "classifications": _LETTER_CLASSIFICATIONS,
             "preview_html": preview_html,
+            "comments": comments,
             "active": "content",
             "flash": request.cookies.get("_flash"),
             "flash_level": request.cookies.get("_flash_level", "success"),

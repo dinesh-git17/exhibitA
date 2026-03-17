@@ -12,6 +12,8 @@
 		410DF53DDDC4487B80489BFB /* signature_placed.caf in Resources */ = {isa = PBXBuildFile; fileRef = 87692FCAA0B64A1EA83C39A0 /* signature_placed.caf */; };
 		5E6F7A8B9C0D1E2F3A4B5C6D /* MonogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7A8B9C0D1E2F /* MonogramView.swift */; };
 		6C5BE2232629F356326BE70D /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64230B9304007CA247B886F0 /* Config.swift */; };
+		2B6F04CBF89040A1B49F361F /* ResponseOnRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0AED643C814B9B997C7E78 /* ResponseOnRecordView.swift */; };
+		B7F877F4D6E947889D60C85A /* CommentComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465468DC50134D0DAC5322C8 /* CommentComposeView.swift */; };
 		6F7A8B9C0D1E2F3A4B5C6D7E /* ClassificationLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* ClassificationLabel.swift */; };
 		796B0B7AA9C9403388060353 /* SignatureBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EC86E10821843E2B1B44154 /* SignatureBlockView.swift */; };
 		7A8B9C0D1E2F3A4B5C6D7E8F /* ExhibitBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4D5E6F7A8B9C0D1E2F3A4B /* ExhibitBadge.swift */; };
@@ -36,6 +38,7 @@
 		D2B3C4D5E6F70819A0B1C2D3 /* PaperNoise.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F1C3D2E8A04176F2D5B9A3 /* PaperNoise.swift */; };
 		D9E0F1A2B3C4D5E6F7A8B9CA /* CoverPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B7C8D9E0F1A2B3C4D5E6F7 /* CoverPageView.swift */; };
 		E0F1A2B3C4D5E6F7A8B9CADB /* TOCPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C8D9E0F1A2B3C4D5E6F7A8 /* TOCPageView.swift */; };
+		B714D04F7C46491994A69DEE /* CommentUploadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09FF0132BFB4E28BC5588F6 /* CommentUploadQueue.swift */; };
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* UploadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* UploadQueue.swift */; };
 		EA25F5721DCDE7F02F969A64 /* ExhibitAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666EFF365F9200946EFB7A9B /* ExhibitAApp.swift */; };
 		F1A2B3C4D5E6F7A8B9CADBE0 /* ContractPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D9E0F1A2B3C4D5E6F7A8C0 /* ContractPageView.swift */; };
@@ -47,6 +50,9 @@
 /* Begin PBXFileReference section */
 		1A2B3C4D5E6F7A8B9C0D1E2F /* MonogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonogramView.swift; sourceTree = "<group>"; };
 2126D65E6059B80A6CC51F77 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		E09FF0132BFB4E28BC5588F6 /* CommentUploadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentUploadQueue.swift; sourceTree = "<group>"; };
+		DC0AED643C814B9B997C7E78 /* ResponseOnRecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseOnRecordView.swift; sourceTree = "<group>"; };
+		465468DC50134D0DAC5322C8 /* CommentComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentComposeView.swift; sourceTree = "<group>"; };
 		2243D604AF0A42DB8D0500DF /* SignaturePadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignaturePadView.swift; sourceTree = "<group>"; };
 		2B3C4D5E6F7A8B9C0D1E2F3A /* ClassificationLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassificationLabel.swift; sourceTree = "<group>"; };
 		2CA32C71E3332AEAF8405A7A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -144,8 +150,10 @@
 			isa = PBXGroup;
 			children = (
 				2B3C4D5E6F7A8B9C0D1E2F3A /* ClassificationLabel.swift */,
+				465468DC50134D0DAC5322C8 /* CommentComposeView.swift */,
 				3C4D5E6F7A8B9C0D1E2F3A4B /* ExhibitBadge.swift */,
 				1A2B3C4D5E6F7A8B9C0D1E2F /* MonogramView.swift */,
+				DC0AED643C814B9B997C7E78 /* ResponseOnRecordView.swift */,
 				4D5E6F7A8B9C0D1E2F3A4B5C /* UnreadBadge.swift */,
 			);
 			path = Components;
@@ -198,6 +206,7 @@
 		A4B5C6D7E8F9A0B1C2D3E4F5 /* Sync */ = {
 			isa = PBXGroup;
 			children = (
+				E09FF0132BFB4E28BC5588F6 /* CommentUploadQueue.swift */,
 				B5C6D7E8F9A0B1C2D3E4F5A6 /* SyncService.swift */,
 				F8A9B0C1D2E3F4A5B6C7D8E9 /* UploadQueue.swift */,
 			);
@@ -384,8 +393,11 @@
 				CF4FDE6E517E494CB9CFD937 /* SignaturePadView.swift in Sources */,
 				CA55920C300D449FB8C6E937 /* FinalPageView.swift in Sources */,
 				C6D7E8F9A0B1C2D3E4F5A6B7 /* SyncService.swift in Sources */,
+				B714D04F7C46491994A69DEE /* CommentUploadQueue.swift in Sources */,
 				E7F8A9B0C1D2E3F4A5B6C7D8 /* UploadQueue.swift in Sources */,
 				8B2C3D4E5F6A7B9C0D1E2F3B /* SoundService.swift in Sources */,
+				2B6F04CBF89040A1B49F361F /* ResponseOnRecordView.swift in Sources */,
+				B7F877F4D6E947889D60C85A /* CommentComposeView.swift in Sources */,
 				0D4E5F6A7B8C9D1E2F3A4B5D /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

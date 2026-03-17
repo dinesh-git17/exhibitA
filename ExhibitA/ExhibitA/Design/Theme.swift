@@ -93,6 +93,13 @@ enum Theme {
             return color
         }
 
+        static var backgroundReading: UIColor {
+            guard let color = UIColor(named: "BackgroundReading") else {
+                let message = "Asset catalog missing: BackgroundReading"
+                preconditionFailure(message)
+            }
+            return color
+        }
     }
 
     // MARK: - Typography (Design Doc S6.3)
