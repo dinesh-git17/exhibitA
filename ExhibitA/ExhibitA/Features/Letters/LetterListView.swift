@@ -24,8 +24,8 @@ struct LetterListView: View {
                 }
             }
         }
-        .background(Theme.Colors.Background.primary, ignoresSafeAreaEdges: .all)
-        .toolbarBackground(Theme.Colors.Background.primary, for: .navigationBar)
+        .background(Theme.Colors.Background.reading, ignoresSafeAreaEdges: .all)
+        .toolbarBackground(Theme.Colors.Background.reading, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -63,7 +63,7 @@ struct LetterListView: View {
                 }
 
                 if let title = letter.title {
-                    Text("\"\(title)\"")
+                    Text(title)
                         .font(Theme.Typography.articleTitle)
                         .foregroundStyle(Theme.Colors.Text.primary)
                         .fixedSize(horizontal: false, vertical: true)

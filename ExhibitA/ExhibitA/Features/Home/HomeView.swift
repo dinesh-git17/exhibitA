@@ -219,6 +219,13 @@ private struct FilingCabinetCard: View {
                 x: Theme.Shadows.card[2].x,
                 y: Theme.Shadows.card[2].y
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+                    .strokeBorder(
+                        Theme.Colors.Accent.primary.opacity(0.07),
+                        lineWidth: 1
+                    )
+            )
         }
         .buttonStyle(CardPressStyle())
         .accessibilityLabel(accessibilityText)

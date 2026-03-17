@@ -24,8 +24,8 @@ struct ThoughtListView: View {
                 }
             }
         }
-        .background(Theme.Colors.Background.primary, ignoresSafeAreaEdges: .all)
-        .toolbarBackground(Theme.Colors.Background.primary, for: .navigationBar)
+        .background(Theme.Colors.Background.reading, ignoresSafeAreaEdges: .all)
+        .toolbarBackground(Theme.Colors.Background.reading, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -110,7 +110,7 @@ struct ThoughtListView: View {
     private func previewText(for thought: ContentItem) -> String {
         let trimmed = thought.body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
-        return "\"\(trimmed)\""
+        return trimmed
     }
 }
 
