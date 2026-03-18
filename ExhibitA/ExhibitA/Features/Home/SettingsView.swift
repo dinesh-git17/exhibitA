@@ -5,7 +5,7 @@ struct SettingsView: View {
     @Environment(SoundService.self) private var soundService: SoundService?
     var onRefresh: (() async -> Void)?
 
-    @State private var notificationsEnabled = true
+    @State private var notificationStatus: UNAuthorizationStatus = .authorized
     @State private var isRefreshing = false
 
     var body: some View {
@@ -17,7 +17,7 @@ struct SettingsView: View {
                 .overlay(Theme.Colors.Border.separator)
                 .padding(.horizontal, Theme.Spacing.lg)
 
-            if !notificationsEnabled {
+            if notificationStatus != .authorized {
                 notificationSection
 
                 sectionDivider
@@ -64,7 +64,7 @@ struct SettingsView: View {
 
     private var notificationSection: some View {
         Button {
-            openNotificationSettings()
+            Task { await handleNotificationAction() }
         } label: {
             HStack(spacing: Theme.Spacing.sm) {
                 Image(systemName: "bell.slash.fill")
@@ -78,16 +78,18 @@ struct SettingsView: View {
                         .font(Theme.Typography.sectionMarker)
                         .foregroundStyle(Theme.Colors.Text.primary)
 
-                    Text("Get notified when new content is filed")
+                    Text(notificationSubtitle)
                         .font(Theme.Typography.metadata)
                         .foregroundStyle(Theme.Colors.Text.muted)
                 }
 
                 Spacer(minLength: 0)
 
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Theme.Colors.Text.muted)
+                if notificationStatus == .denied {
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Theme.Colors.Text.muted)
+                }
             }
             .padding(.horizontal, Theme.Spacing.lg)
             .padding(.vertical, Theme.Spacing.md)
@@ -95,7 +97,17 @@ struct SettingsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Enable Notifications")
-        .accessibilityHint("Opens system notification settings")
+        .accessibilityHint(
+            notificationStatus == .denied
+                ? "Opens system notification settings"
+                : "Request notification permission"
+        )
+    }
+
+    private var notificationSubtitle: String {
+        notificationStatus == .denied
+            ? "Notifications were denied. Tap to open Settings."
+            : "Get notified when new content is filed"
     }
 
     // MARK: - Sound Toggle
@@ -182,12 +194,21 @@ struct SettingsView: View {
 
     private func checkNotificationStatus() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
-        notificationsEnabled = settings.authorizationStatus == .authorized
+        notificationStatus = settings.authorizationStatus
     }
 
-    private func openNotificationSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+    private func handleNotificationAction() async {
+        if notificationStatus == .notDetermined {
+            let center = UNUserNotificationCenter.current()
+            let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+            if granted {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+            await checkNotificationStatus()
+        } else {
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            await UIApplication.shared.open(url)
+        }
     }
 }
 

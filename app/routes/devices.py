@@ -71,6 +71,10 @@ async def register_device_token(
     token_id = str(uuid.uuid4())
 
     await db.execute(
+        "DELETE FROM device_tokens WHERE signer = ? AND token != ?",
+        (body.signer, body.token),
+    )
+    await db.execute(
         "INSERT INTO device_tokens (id, signer, token) "
         "VALUES (?, ?, ?) "
         "ON CONFLICT(token) DO UPDATE SET "
