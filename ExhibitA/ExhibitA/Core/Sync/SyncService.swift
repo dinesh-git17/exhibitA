@@ -125,6 +125,8 @@ final class SyncService {
         }
     }
 
+    private static let maxConcurrentFetches = 3
+
     // MARK: - Signature Hydration
 
     private func hydrateSignatures(content: [ContentItem]) async {
@@ -133,20 +135,14 @@ final class SyncService {
 
         let signatureCache = SignatureCache()
 
-        let allRecords: [(String, [SignatureRecord])] = await withTaskGroup(
-            of: (String, [SignatureRecord]).self
-        ) { group in
-            for item in signable {
-                group.addTask {
-                    let records = (try? await self.client.fetchSignatures(contentId: item.id)) ?? []
-                    return (item.id, records)
-                }
+        var allRecords: [(String, [SignatureRecord])] = []
+        for item in signable {
+            do {
+                let records = try await client.fetchSignatures(contentId: item.id)
+                allRecords.append((item.id, records))
+            } catch {
+                logger.error("Failed to fetch signatures for \(item.id): \(error)")
             }
-            var results: [(String, [SignatureRecord])] = []
-            for await result in group {
-                results.append(result)
-            }
-            return results
         }
 
         for (contentId, records) in allRecords {
@@ -161,24 +157,45 @@ final class SyncService {
             }
         }
 
+        var downloads: [(contentId: String, record: SignatureRecord)] = []
+        for (contentId, records) in allRecords {
+            for record in records {
+                let cached = await signatureCache.load(
+                    contentId: contentId,
+                    signer: record.signer
+                )
+                if cached == nil {
+                    downloads.append((contentId, record))
+                }
+            }
+        }
+
+        guard !downloads.isEmpty else { return }
+        logger.debug("Downloading \(downloads.count) missing signature PNGs")
+
         await withTaskGroup(of: Void.self) { group in
-            for (contentId, records) in allRecords {
-                for record in records {
-                    group.addTask {
-                        let cached = await signatureCache.load(
-                            contentId: contentId,
-                            signer: record.signer
+            var active = 0
+            for download in downloads {
+                if active >= Self.maxConcurrentFetches {
+                    await group.next()
+                    active -= 1
+                }
+                active += 1
+                group.addTask {
+                    do {
+                        let imageData = try await self.client.fetchSignatureImage(
+                            signatureId: download.record.id
                         )
-                        guard cached == nil else { return }
-                        if let imageData = try? await self.client.fetchSignatureImage(
-                            signatureId: record.id
-                        ) {
-                            try? await signatureCache.save(
-                                png: imageData,
-                                contentId: contentId,
-                                signer: record.signer
-                            )
-                        }
+                        try await signatureCache.save(
+                            png: imageData,
+                            contentId: download.contentId,
+                            signer: download.record.signer
+                        )
+                        self.logger.debug("Downloaded signature: \(download.contentId)_\(download.record.signer)")
+                    } catch {
+                        self.logger.error(
+                            "Signature image download failed for \(download.contentId)_\(download.record.signer): \(error)"
+                        )
                     }
                 }
             }

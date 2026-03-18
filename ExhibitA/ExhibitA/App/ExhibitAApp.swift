@@ -114,6 +114,8 @@ struct ExhibitAApp: App {
 
         appDelegate.flushBufferedToken()
 
+        await SignatureCache().migrateFromCachesIfNeeded()
+
         let cached = await cache.loadAll()
         appState.updateCachedContent(cached)
 

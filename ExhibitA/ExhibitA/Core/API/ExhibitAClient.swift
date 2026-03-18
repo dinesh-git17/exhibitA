@@ -11,7 +11,7 @@ actor ExhibitAClient {
     private let dateFormatter: DateFormatter
     private let logger = Logger(subsystem: "dev.dineshd.exhibita", category: "api")
 
-    private static let requestTimeout: TimeInterval = 15
+    private static let requestTimeout: TimeInterval = 30
 
     // MARK: - Initialization
 
