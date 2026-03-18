@@ -77,6 +77,16 @@ def _build_route(content_type: str, content_id: str) -> str:
     return f"{content_type}/{content_id}"
 
 
+_BAD_TOKEN_REASONS = {"BadDeviceToken", "Unregistered", "DeviceTokenNotForTopic"}
+
+
+async def _prune_token(db: Any, token: str) -> None:
+    """Remove a stale device token from the database."""
+    await db.execute("DELETE FROM device_tokens WHERE token = ?", (token,))
+    await db.commit()
+    _log.info("apns_token_pruned", token_prefix=token[:8])
+
+
 async def send_push(
     settings: Settings,
     db: Any,
@@ -144,6 +154,8 @@ async def send_push(
                     description=result.description,
                 )
                 warnings.append(warning)
+                if result.description in _BAD_TOKEN_REASONS:
+                    await _prune_token(db, token)
             else:
                 _log.info("apns_send_success", token_prefix=token[:8])
         except Exception:
@@ -234,6 +246,8 @@ async def send_comment_push(
                     description=result.description,
                 )
                 warnings.append(warning)
+                if result.description in _BAD_TOKEN_REASONS:
+                    await _prune_token(db, token)
             else:
                 _log.info("apns_comment_send_success", token_prefix=token[:8])
         except Exception:
