@@ -21,6 +21,7 @@ def build_api_router() -> APIRouter:
     from app.routes.comments import router as comments_router
     from app.routes.content import router as content_router
     from app.routes.devices import router as devices_router
+    from app.routes.filings import router as filings_router
     from app.routes.signatures import router as signatures_router
 
     api_router = APIRouter(dependencies=[Depends(require_auth)])
@@ -28,4 +29,5 @@ def build_api_router() -> APIRouter:
     api_router.include_router(signatures_router)
     api_router.include_router(comments_router)
     api_router.include_router(devices_router)
+    api_router.include_router(filings_router)
     return api_router

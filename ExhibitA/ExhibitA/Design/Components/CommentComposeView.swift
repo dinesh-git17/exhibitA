@@ -9,7 +9,6 @@ struct CommentComposeView: View {
     @Environment(CommentUploadQueue.self) private var commentQueue
 
     @State private var commentText = ""
-    @State private var isSubmitting = false
 
     private static let cornerRadius: CGFloat = 12
 
@@ -28,30 +27,29 @@ struct CommentComposeView: View {
                     .padding(.horizontal, Theme.Spacing.md)
                     .padding(.top, Theme.Spacing.md)
                     .padding(.bottom, Theme.Spacing.sm)
-                    .disabled(isSubmitting)
 
                 HStack {
                     Spacer()
                     Button {
-                        Task { await submit() }
+                        submit()
                     } label: {
                         Text("File Response")
                             .font(Theme.Typography.label)
                             .foregroundStyle(
-                                trimmedBody.isEmpty || isSubmitting
+                                trimmedBody.isEmpty
                                     ? Theme.Colors.Text.muted
                                     : Theme.Colors.Background.reading
                             )
                             .padding(.horizontal, Theme.Spacing.md)
                             .padding(.vertical, Theme.Spacing.sm)
                             .background(
-                                trimmedBody.isEmpty || isSubmitting
+                                trimmedBody.isEmpty
                                     ? Theme.Colors.Background.tertiary
                                     : Theme.Colors.Accent.warm
                             )
                             .clipShape(.rect(cornerRadius: 8, style: .continuous))
                     }
-                    .disabled(trimmedBody.isEmpty || isSubmitting)
+                    .disabled(trimmedBody.isEmpty)
                 }
                 .padding(.horizontal, Theme.Spacing.md)
                 .padding(.bottom, Theme.Spacing.md)
@@ -69,37 +67,42 @@ struct CommentComposeView: View {
         commentText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func submit() async {
+    private func submit() {
         guard !trimmedBody.isEmpty else { return }
-        isSubmitting = true
-        defer { isSubmitting = false }
 
         let text = trimmedBody
+        let signer = Config.signerIdentity
+        let tempId = UUID().uuidString
 
-        do {
-            let record = try await client.createComment(
-                contentId: contentId,
-                signer: Config.signerIdentity,
-                body: text
-            )
-            appState.cacheComment(record)
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        } catch let error as APIError {
-            if case .httpFailure(statusCode: 409, _, _) = error {
-                return
+        let optimistic = CommentRecord(
+            id: tempId,
+            contentId: contentId,
+            signer: signer,
+            body: text,
+            createdAt: .now
+        )
+        appState.cacheComment(optimistic)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        commentText = ""
+
+        Task {
+            do {
+                let record = try await client.createComment(
+                    contentId: contentId,
+                    signer: signer,
+                    body: text
+                )
+                await MainActor.run { appState.cacheComment(record) }
+            } catch let error as APIError {
+                if case .httpFailure(statusCode: 409, _, _) = error {
+                    return
+                }
+                commentQueue.enqueue(
+                    contentId: contentId,
+                    signer: signer,
+                    body: text
+                )
             }
-            commentQueue.enqueue(
-                contentId: contentId,
-                signer: Config.signerIdentity,
-                body: text
-            )
-            appState.cacheComment(CommentRecord(
-                id: UUID().uuidString,
-                contentId: contentId,
-                signer: Config.signerIdentity,
-                body: text,
-                createdAt: .now
-            ))
         }
     }
 }

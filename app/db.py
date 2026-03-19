@@ -65,6 +65,21 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     expires_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS filings (
+    id TEXT PRIMARY KEY,
+    filing_type TEXT NOT NULL
+        CHECK(filing_type IN ('motion', 'objection', 'emergency_order')),
+    filed_by TEXT NOT NULL CHECK(filed_by IN ('dinesh', 'carolina')),
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    ruling TEXT CHECK(ruling IN ('granted', 'denied', 'sustained', 'overruled')),
+    ruling_reason TEXT,
+    ruled_by TEXT CHECK(ruled_by IN ('dinesh', 'carolina')),
+    ruled_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 _INDEX_SQL = """\
@@ -73,6 +88,8 @@ CREATE INDEX IF NOT EXISTS idx_content_order ON content(type, section_order);
 CREATE INDEX IF NOT EXISTS idx_signatures_content ON signatures(content_id);
 CREATE INDEX IF NOT EXISTS idx_comments_content ON comments(content_id);
 CREATE INDEX IF NOT EXISTS idx_sync_log_time ON sync_log(occurred_at);
+CREATE INDEX IF NOT EXISTS idx_filings_type ON filings(filing_type);
+CREATE INDEX IF NOT EXISTS idx_filings_created ON filings(created_at DESC);
 """
 
 
@@ -82,6 +99,7 @@ async def connect(db_path: Path) -> aiosqlite.Connection:
     connection = await aiosqlite.connect(str(db_path))
     connection.row_factory = sqlite3.Row
     await connection.execute("PRAGMA journal_mode=WAL")
+    await connection.execute("PRAGMA busy_timeout=5000")
     await connection.execute("PRAGMA foreign_keys=ON")
     await connection.executescript(_SCHEMA_SQL)
     await connection.executescript(_INDEX_SQL)

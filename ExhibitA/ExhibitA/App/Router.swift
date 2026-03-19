@@ -11,6 +11,9 @@ import SwiftUI
         case thoughtsList
         case letterDetail(id: String)
         case thoughtDetail(id: String)
+        case filingsList
+        case filingDetail(id: String)
+        case filingCompose
     }
 
     func navigate(to route: Route) {
@@ -40,6 +43,8 @@ extension Router.Route {
             return id.map { .letterDetail(id: $0) } ?? .lettersList
         case "thought":
             return id.map { .thoughtDetail(id: $0) } ?? .thoughtsList
+        case "filing":
+            return id.map { .filingDetail(id: $0) } ?? .filingsList
         default:
             return nil
         }

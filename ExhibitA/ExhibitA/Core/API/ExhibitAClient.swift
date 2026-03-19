@@ -3,7 +3,8 @@ import os
 
 /// Authenticated API client for the Exhibit A backend.
 /// All requests include Bearer token auth sourced from KeychainService.
-actor ExhibitAClient {
+/// All stored properties are immutable; URLSession is thread-safe.
+final class ExhibitAClient: @unchecked Sendable {
     private let session: URLSession
     private let baseURL: URL
     private let decoder: JSONDecoder
@@ -168,6 +169,77 @@ actor ExhibitAClient {
             request.httpBody = try encoder.encode(payload)
         } catch {
             throw .decodingFailure(context: "CommentCreateRequest encoding")
+        }
+
+        let (data, response) = try await performRequest(request)
+        try validateStatus(response, data: data)
+        return try decode(from: data)
+    }
+
+    // MARK: - Filings
+
+    func fetchFilings() async throws(APIError) -> [Filing] {
+        let request = try makeAuthenticatedRequest(path: "/filings")
+        let (data, response) = try await performRequest(request)
+        try validateStatus(response, data: data)
+        let envelope: FilingListResponse = try decode(from: data)
+        return envelope.items
+    }
+
+    func fetchFiling(id: String) async throws(APIError) -> Filing {
+        let request = try makeAuthenticatedRequest(path: "/filings/\(id)")
+        let (data, response) = try await performRequest(request)
+        try validateStatus(response, data: data)
+        return try decode(from: data)
+    }
+
+    func createFiling(
+        type: FilingType,
+        filedBy: String,
+        title: String,
+        body: String
+    ) async throws(APIError) -> Filing {
+        var request = try makeAuthenticatedRequest(path: "/filings", method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let payload = FilingCreateRequest(
+            filingType: type,
+            filedBy: filedBy,
+            title: title,
+            body: body
+        )
+        do {
+            request.httpBody = try encoder.encode(payload)
+        } catch {
+            throw .decodingFailure(context: "FilingCreateRequest encoding")
+        }
+
+        let (data, response) = try await performRequest(request)
+        try validateStatus(response, data: data)
+        return try decode(from: data)
+    }
+
+    func createRuling(
+        filingId: String,
+        ruling: RulingVerdict,
+        reason: String,
+        ruledBy: String
+    ) async throws(APIError) -> Filing {
+        var request = try makeAuthenticatedRequest(
+            path: "/filings/\(filingId)/ruling",
+            method: "POST"
+        )
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let payload = RulingCreateRequest(
+            ruling: ruling,
+            rulingReason: reason,
+            ruledBy: ruledBy
+        )
+        do {
+            request.httpBody = try encoder.encode(payload)
+        } catch {
+            throw .decodingFailure(context: "RulingCreateRequest encoding")
         }
 
         let (data, response) = try await performRequest(request)

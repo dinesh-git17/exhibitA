@@ -27,6 +27,7 @@ final class SyncService {
             allContent = try await client.fetchContent()
         } catch {
             logger.error("Full sync fetch failed: \(error)")
+            await hydrateFilings()
             return
         }
 
@@ -37,12 +38,12 @@ final class SyncService {
             }
         } catch {
             logger.error("Full sync cache write failed: \(error)")
-            return
         }
 
         appState.updateCachedContent(allContent)
         await hydrateSignatures(content: allContent)
         await hydrateComments(content: allContent)
+        await hydrateFilings()
         appState.lastSyncAt = .now
     }
 
@@ -61,6 +62,7 @@ final class SyncService {
             let allContent = await cache.loadAll()
             appState.updateCachedContent(allContent)
             await hydrateSignatures(content: allContent)
+            await hydrateFilings()
             appState.lastSyncAt = .now
             return
         }
@@ -105,6 +107,8 @@ final class SyncService {
         await hydrateSignatures(content: allContent)
         await hydrateComments(content: allContent)
 
+        await hydrateFilings()
+
         appState.lastSyncAt = .now
 
         logger.debug("Sync complete: \(fetched.count) updated, \(idsToDelete.count) deleted")
@@ -136,12 +140,16 @@ final class SyncService {
         let signatureCache = SignatureCache()
 
         var allRecords: [(String, [SignatureRecord])] = []
-        for item in signable {
-            do {
-                let records = try await client.fetchSignatures(contentId: item.id)
-                allRecords.append((item.id, records))
-            } catch {
-                logger.error("Failed to fetch signatures for \(item.id): \(error)")
+        await withTaskGroup(of: (String, [SignatureRecord])?.self) { group in
+            for item in signable {
+                group.addTask {
+                    guard let records = try? await self.client.fetchSignatures(contentId: item.id)
+                    else { return nil }
+                    return (item.id, records)
+                }
+            }
+            for await result in group {
+                if let result { allRecords.append(result) }
             }
         }
 
@@ -199,6 +207,17 @@ final class SyncService {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Filing Hydration
+
+    private func hydrateFilings() async {
+        do {
+            let filings = try await client.fetchFilings()
+            appState.updateCachedFilings(filings)
+        } catch {
+            logger.error("Filing hydration failed: \(error)")
         }
     }
 

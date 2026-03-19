@@ -25,6 +25,12 @@ import Foundation
         didSet { persistComments() }
     }
 
+    // MARK: - Filing State
+
+    private(set) var cachedFilings: [Filing] = [] {
+        didSet { persistFilings() }
+    }
+
     // MARK: - Signature State
 
     private(set) var signedSignatures: [String: Date] = [:] {
@@ -41,6 +47,7 @@ import Foundation
         seenContentIDs = Self.loadSeenContentIDs(from: defaults)
         signedSignatures = Self.loadSignedSignatures(from: defaults)
         cachedComments = Self.loadComments(from: defaults)
+        cachedFilings = Self.loadFilings(from: defaults)
     }
 
     // MARK: - Unread API
@@ -75,6 +82,36 @@ import Foundation
 
     private func commentKey(contentId: String, signer: String) -> String {
         "\(contentId)_\(signer)"
+    }
+
+    // MARK: - Filing API
+
+    func updateCachedFilings(_ items: [Filing]) {
+        cachedFilings = items
+    }
+
+    func cacheFiling(_ filing: Filing) {
+        if let index = cachedFilings.firstIndex(where: { $0.id == filing.id }) {
+            cachedFilings[index] = filing
+        } else {
+            cachedFilings.insert(filing, at: 0)
+        }
+    }
+
+    func filingCount() -> Int {
+        cachedFilings.count
+    }
+
+    func hasUnruledFilings() -> Bool {
+        cachedFilings.contains { $0.ruling == nil }
+    }
+
+    func pendingFilingsCount() -> Int {
+        cachedFilings.filter { $0.ruling == nil }.count
+    }
+
+    func removeFiling(id: String) {
+        cachedFilings.removeAll { $0.id == id }
     }
 
     // MARK: - Signature API
@@ -125,6 +162,20 @@ import Foundation
         return decoded
     }
 
+    private func persistFilings() {
+        guard let data = try? JSONEncoder().encode(cachedFilings) else { return }
+        defaults.set(data, forKey: StorageKey.cachedFilings)
+    }
+
+    private static func loadFilings(from defaults: UserDefaults) -> [Filing] {
+        guard let data = defaults.data(forKey: StorageKey.cachedFilings),
+              let decoded = try? JSONDecoder().decode([Filing].self, from: data)
+        else {
+            return []
+        }
+        return decoded
+    }
+
     private func persistSignedSignatures() {
         guard let data = try? JSONEncoder().encode(signedSignatures) else { return }
         defaults.set(data, forKey: StorageKey.signedSignatures)
@@ -145,4 +196,5 @@ private enum StorageKey {
     static let seenContentIDs = "exhibit_a_seen_content_ids"
     static let signedSignatures = "exhibit_a_signed_signatures"
     static let cachedComments = "exhibit_a_cached_comments"
+    static let cachedFilings = "exhibit_a_cached_filings"
 }

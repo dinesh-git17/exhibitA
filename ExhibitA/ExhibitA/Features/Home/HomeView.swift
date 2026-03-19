@@ -112,6 +112,18 @@ struct HomeView: View {
                 router.navigate(to: .thoughtsList)
             }
             .cardParallax(reduceMotion: reduceMotion)
+
+            FilingCabinetCard(
+                sectionName: "Motions & Objections",
+                label: "Court Proceedings",
+                subtitle: filingsSubtitle,
+                symbolName: "scroll",
+                symbolColor: Theme.Colors.Accent.warm,
+                isUnread: appState.hasUnruledFilings()
+            ) {
+                router.navigate(to: .filingsList)
+            }
+            .cardParallax(reduceMotion: reduceMotion)
         }
         .padding(.horizontal, Theme.Spacing.lg)
     }
@@ -137,6 +149,15 @@ struct HomeView: View {
         appState.cachedContent
             .filter { $0.type == type }
             .contains { !appState.hasBeenSeen($0.id) }
+    }
+
+    private var filingsSubtitle: String {
+        let pending = appState.pendingFilingsCount()
+        if pending > 0 {
+            return "\(pending) pending ruling"
+        }
+        let total = appState.filingCount()
+        return "\(total) filings on record"
     }
 }
 
