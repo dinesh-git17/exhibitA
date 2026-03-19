@@ -20,6 +20,23 @@ class ContentType(StrEnum):
     THOUGHT = "thought"
 
 
+class FilingType(StrEnum):
+    """Filing classification types."""
+
+    MOTION = "motion"
+    OBJECTION = "objection"
+    EMERGENCY_ORDER = "emergency_order"
+
+
+class RulingVerdict(StrEnum):
+    """Ruling verdict options."""
+
+    GRANTED = "granted"
+    DENIED = "denied"
+    SUSTAINED = "sustained"
+    OVERRULED = "overruled"
+
+
 class SyncAction(StrEnum):
     """Sync log action types."""
 

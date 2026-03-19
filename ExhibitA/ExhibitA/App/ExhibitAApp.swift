@@ -1,3 +1,4 @@
+import os
 import SwiftUI
 import UIKit
 import UserNotifications
@@ -61,6 +62,12 @@ struct ExhibitAApp: App {
                             LetterDetailView(id: id, client: client)
                         case let .thoughtDetail(id):
                             ThoughtDetailView(id: id, client: client)
+                        case .filingsList:
+                            FilingListView(client: client)
+                        case let .filingDetail(id):
+                            FilingDetailView(id: id, client: client)
+                        case .filingCompose:
+                            FilingComposeView(client: client)
                         }
                     }
             }
@@ -102,7 +109,28 @@ struct ExhibitAApp: App {
             }
         }
 
-        appDelegate.onNotificationRoute = { [router, syncService] route in
+        appDelegate.onNotificationRoute = { [client, appState, router, syncService] route in
+            let segments = route.split(separator: "/", maxSplits: 1)
+            let kind = segments.first.map(String.init)
+            let entityId = segments.count > 1 ? String(segments[1]) : nil
+
+            if let kind, let entityId {
+                switch kind {
+                case "filing":
+                    if let filing = try? await client.fetchFiling(id: entityId) {
+                        await MainActor.run { appState.cacheFiling(filing) }
+                    }
+                case "letter", "thought":
+                    if let comments = try? await client.fetchComments(contentId: entityId) {
+                        await MainActor.run {
+                            for comment in comments { appState.cacheComment(comment) }
+                        }
+                    }
+                default:
+                    break
+                }
+            }
+
             if let destination = Router.Route.from(pushRoute: route) {
                 await MainActor.run {
                     router.popToRoot()
@@ -110,6 +138,10 @@ struct ExhibitAApp: App {
                 }
             }
             await syncService.performFullSync()
+        }
+
+        appDelegate.onForegroundNotification = { [syncService] in
+            Task { await syncService.performFullSync() }
         }
 
         appDelegate.flushBufferedToken()
@@ -175,6 +207,7 @@ struct ExhibitAApp: App {
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var onDeviceToken: ((Data) -> Void)?
     var onNotificationRoute: ((String) async -> Void)?
+    var onForegroundNotification: (() -> Void)?
     private var bufferedToken: Data?
 
     func application(
@@ -199,7 +232,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
-    ) {}
+    ) {
+        Logger(subsystem: "dev.dineshd.exhibita", category: "push")
+            .error("Push registration failed: \(error)")
+    }
 
     func flushBufferedToken() {
         guard let token = bufferedToken, let handler = onDeviceToken else { return }
@@ -222,6 +258,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        onForegroundNotification?()
+        return [.banner, .sound]
     }
 }

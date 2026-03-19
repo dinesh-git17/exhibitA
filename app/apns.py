@@ -7,7 +7,7 @@ import structlog
 from aioapns import APNs, NotificationRequest, PushType
 
 from app.config import Settings
-from app.models import ContentType
+from app.models import ContentType, FilingType
 
 _log: structlog.stdlib.BoundLogger = structlog.get_logger()
 
@@ -253,6 +253,129 @@ async def send_comment_push(
         except Exception:
             warning = f"APNS comment connection error for token {token[:8]}..."
             _log.exception("apns_comment_send_exception", token_prefix=token[:8])
+            warnings.append(warning)
+
+    return warnings
+
+
+_FILING_TYPE_LABELS: dict[str, str] = {
+    FilingType.MOTION: "motion",
+    FilingType.OBJECTION: "objection",
+    FilingType.EMERGENCY_ORDER: "emergency order",
+}
+
+
+async def send_filing_push(
+    settings: Settings,
+    db: Any,
+    *,
+    filing_type: str,
+    filing_id: str,
+    filing_signer: str,
+) -> list[str]:
+    """Send APNS push to the OTHER signer when a filing is created."""
+    client = _build_client(settings)
+    if client is None:
+        return ["APNS not configured -- filing push skipped."]
+
+    cursor = await db.execute(
+        "SELECT token FROM device_tokens WHERE signer != ?",
+        (filing_signer,),
+    )
+    rows = await cursor.fetchall()
+    tokens: list[str] = [row["token"] for row in rows]
+
+    if not tokens:
+        _log.info("apns_filing_no_tokens", reason="no tokens for other signer")
+        return []
+
+    label = _FILING_TYPE_LABELS.get(filing_type, "filing")
+    title = "New Filing Received"
+    body = f"A {label} has been filed requiring your attention."
+    route = f"filing/{filing_id}"
+
+    return await _send_to_tokens(client, db, tokens, title, body, route, "filing")
+
+
+async def send_ruling_push(
+    settings: Settings,
+    db: Any,
+    *,
+    filing_type: str,
+    filing_id: str,
+    ruling: str,
+    ruling_signer: str,
+) -> list[str]:
+    """Send APNS push to the filer when a ruling is issued."""
+    client = _build_client(settings)
+    if client is None:
+        return ["APNS not configured -- ruling push skipped."]
+
+    cursor = await db.execute(
+        "SELECT token FROM device_tokens WHERE signer != ?",
+        (ruling_signer,),
+    )
+    rows = await cursor.fetchall()
+    tokens: list[str] = [row["token"] for row in rows]
+
+    if not tokens:
+        _log.info("apns_ruling_no_tokens", reason="no tokens for filer")
+        return []
+
+    label = _FILING_TYPE_LABELS.get(filing_type, "filing")
+    verdict = ruling.upper()
+    title = "Ruling Issued"
+    body = f"Your {label} has been {verdict}. See the court's reasoning."
+    route = f"filing/{filing_id}"
+
+    return await _send_to_tokens(client, db, tokens, title, body, route, "ruling")
+
+
+async def _send_to_tokens(
+    client: APNs,
+    db: Any,
+    tokens: list[str],
+    title: str,
+    body: str,
+    route: str,
+    log_prefix: str,
+) -> list[str]:
+    """Deliver a push notification to a list of device tokens."""
+    warnings: list[str] = []
+    for token in tokens:
+        message: dict[str, Any] = {
+            "aps": {
+                "alert": {"title": title, "body": body},
+                "sound": "notif.caf",
+            },
+            "route": route,
+        }
+        request = NotificationRequest(
+            device_token=token,
+            message=message,
+            push_type=PushType.ALERT,
+        )
+        try:
+            result = await client.send_notification(request)
+            if not result.is_successful:
+                warning = (
+                    f"APNS {log_prefix} push failed for token {token[:8]}...: "
+                    f"{result.description}"
+                )
+                _log.warning(
+                    f"apns_{log_prefix}_send_failed",
+                    token_prefix=token[:8],
+                    status=result.status,
+                    description=result.description,
+                )
+                warnings.append(warning)
+                if result.description in _BAD_TOKEN_REASONS:
+                    await _prune_token(db, token)
+            else:
+                _log.info(f"apns_{log_prefix}_send_success", token_prefix=token[:8])
+        except Exception:
+            warning = f"APNS {log_prefix} connection error for token {token[:8]}..."
+            _log.exception(f"apns_{log_prefix}_send_exception", token_prefix=token[:8])
             warnings.append(warning)
 
     return warnings

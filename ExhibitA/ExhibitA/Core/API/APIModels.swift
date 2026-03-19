@@ -98,6 +98,52 @@ nonisolated struct CommentCreateRequest: Encodable, Sendable {
     let body: String
 }
 
+// MARK: - Filings
+
+nonisolated enum FilingType: String, Codable, Sendable {
+    case motion
+    case objection
+    case emergencyOrder = "emergency_order"
+}
+
+nonisolated enum RulingVerdict: String, Codable, Sendable {
+    case granted
+    case denied
+    case sustained
+    case overruled
+}
+
+nonisolated struct Filing: Codable, Sendable, Identifiable {
+    let id: String
+    let filingType: FilingType
+    let filedBy: String
+    let title: String
+    let body: String
+    let ruling: RulingVerdict?
+    let rulingReason: String?
+    let ruledBy: String?
+    let ruledAt: Date?
+    let createdAt: Date
+    let updatedAt: Date
+}
+
+nonisolated struct FilingListResponse: Decodable, Sendable {
+    let items: [Filing]
+}
+
+nonisolated struct FilingCreateRequest: Encodable, Sendable {
+    let filingType: FilingType
+    let filedBy: String
+    let title: String
+    let body: String
+}
+
+nonisolated struct RulingCreateRequest: Encodable, Sendable {
+    let ruling: RulingVerdict
+    let rulingReason: String
+    let ruledBy: String
+}
+
 // MARK: - Error Envelope
 
 nonisolated struct APIErrorEnvelope: Decodable, Sendable {
