@@ -2,7 +2,7 @@
 # Python 3.13+ | Managed with uv | Pinned versions
 
 # Framework
-fastapi==0.135.1
+fastapi==0.135.2
 uvicorn[standard]==0.42.0
 
 # Database
