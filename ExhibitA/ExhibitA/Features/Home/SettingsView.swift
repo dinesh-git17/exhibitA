@@ -4,9 +4,11 @@ import UserNotifications
 struct SettingsView: View {
     @Environment(SoundService.self) private var soundService: SoundService?
     var onRefresh: (() async -> Void)?
+    var onForceSync: (() async -> Void)?
 
     @State private var notificationStatus: UNAuthorizationStatus = .authorized
     @State private var isRefreshing = false
+    @State private var isForceSyncing = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,6 +32,11 @@ struct SettingsView: View {
             }
 
             refreshSection
+
+            if onForceSync != nil {
+                sectionDivider
+                forceSyncSection
+            }
 
             Spacer(minLength: 0)
         }
@@ -188,6 +195,61 @@ struct SettingsView: View {
         .disabled(isRefreshing)
         .accessibilityLabel("Refresh Content")
         .accessibilityHint(isRefreshing ? "Syncing in progress" : "Fetches the latest content from the server")
+    }
+
+    // MARK: - Force Sync
+
+    private var forceSyncSection: some View {
+        Button {
+            guard !isForceSyncing else { return }
+            Task {
+                isForceSyncing = true
+                await onForceSync?()
+                isForceSyncing = false
+            }
+        } label: {
+            HStack(spacing: Theme.Spacing.sm) {
+                Group {
+                    if isForceSyncing {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 18, weight: .medium))
+                    }
+                }
+                .foregroundStyle(Theme.Colors.Text.muted)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    Text("Force Full Sync")
+                        .font(Theme.Typography.sectionMarker)
+                        .foregroundStyle(Theme.Colors.Text.primary)
+
+                    Text(
+                        isForceSyncing
+                            ? "Running full sync..."
+                            : "Re-download all content and signatures"
+                    )
+                    .font(Theme.Typography.metadata)
+                    .foregroundStyle(Theme.Colors.Text.muted)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.vertical, Theme.Spacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isForceSyncing)
+        .accessibilityLabel("Force Full Sync")
+        .accessibilityHint(
+            isForceSyncing
+                ? "Full sync in progress"
+                : "Re-downloads everything from the server"
+        )
     }
 
     // MARK: - Helpers

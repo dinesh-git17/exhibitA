@@ -53,6 +53,10 @@ actor SignatureCache {
 
     // MARK: - Read
 
+    func exists(contentId: String, signer: String) -> Bool {
+        FileManager.default.fileExists(atPath: fileURL(contentId: contentId, signer: signer).path())
+    }
+
     func load(contentId: String, signer: String) -> Data? {
         let url = fileURL(contentId: contentId, signer: signer)
         do {
