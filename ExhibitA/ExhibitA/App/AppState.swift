@@ -64,6 +64,18 @@ import Foundation
         seenContentIDs.insert(contentID)
     }
 
+    func unreadCount(ofType type: ContentType) -> Int {
+        cachedContent
+            .filter { $0.type == type }
+            .filter { !seenContentIDs.contains($0.id) }
+            .count
+    }
+
+    func markAllContentSeen() {
+        let allIDs = Set(cachedContent.map(\.id))
+        seenContentIDs.formUnion(allIDs)
+    }
+
     func updateCachedContent(_ items: [ContentItem]) {
         cachedContent = items
     }

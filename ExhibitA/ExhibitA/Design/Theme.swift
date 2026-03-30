@@ -72,6 +72,9 @@ enum Theme {
             static var gold: Color {
                 Color("AccentGold")
             }
+
+            /// Semantic alias for design system contract (DSC003/DSC014).
+            static var goldLeaf: Color { gold }
         }
 
         enum Border {
@@ -167,6 +170,11 @@ enum Theme {
             .system(size: 13, weight: .regular, design: .serif)
                 .italic()
         }
+
+        /// SF Pro Text Bold 11pt -- pill badge count labels
+        static var pillBadge: Font {
+            .system(size: 11, weight: .bold)
+        }
     }
 
     // MARK: - Line Height (Design Doc S6.3)
@@ -240,6 +248,12 @@ enum Theme {
             ),
         ]
 
+        static let seal: [Layer] = [
+            Layer(color: warmShadow(opacity: 0.08), radius: 2, x: 0, y: 1),
+            Layer(color: warmShadow(opacity: 0.06), radius: 4, x: 0, y: 3),
+            Layer(color: warmShadow(opacity: 0.04), radius: 8, x: 0, y: 6),
+        ]
+
         private static func warmShadow(opacity: Double) -> Color {
             Color(
                 .sRGB,
@@ -256,5 +270,22 @@ enum Theme {
     enum Dividers {
         /// Hairline separator width (0.5pt)
         static let hairline: CGFloat = 0.5
+    }
+
+    // MARK: - Sizing
+
+    enum Sizing {
+        static let sealDiameter: CGFloat = 64
+        static let sealBorderWidth: CGFloat = 2
+        static let sealOuterRingInset: CGFloat = 5
+        static let cardIconContainer: CGFloat = 46
+        static let cardIconSymbol: CGFloat = 22
+        static let cardIconCornerRadius: CGFloat = 12
+        static let cardChevron: CGFloat = 16
+        static let settingsButton: CGFloat = 36
+        static let settingsButtonIcon: CGFloat = 16
+        static let sealMonogramFont: CGFloat = 24
+        static let headerSeparatorWidth: CGFloat = 48
+        static let footerSeparatorWidth: CGFloat = 56
     }
 }
