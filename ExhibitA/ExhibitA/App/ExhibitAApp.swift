@@ -45,11 +45,16 @@ struct ExhibitAApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack(path: $router.path) {
-                HomeView(onRefresh: { [syncService, uploadQueue, commentUploadQueue] in
-                    await syncService.performFullSync()
-                    await uploadQueue.processQueue()
-                    await commentUploadQueue.processQueue()
-                })
+                HomeView(
+                    onRefresh: { [syncService, uploadQueue, commentUploadQueue] in
+                        await syncService.performSync()
+                        await uploadQueue.processQueue()
+                        await commentUploadQueue.processQueue()
+                    },
+                    onForceSync: { [syncService] in
+                        await syncService.performFullSync()
+                    }
+                )
                     .navigationDestination(for: Router.Route.self) { route in
                         switch route {
                         case .contractBook:
@@ -83,7 +88,7 @@ struct ExhibitAApp: App {
                 }
                 if phase == .active {
                     Task {
-                        await syncService.performFullSync()
+                        await syncService.performSync()
                         await uploadQueue.processQueue()
                         await commentUploadQueue.processQueue()
                     }
@@ -91,7 +96,7 @@ struct ExhibitAApp: App {
             }
         }
         .backgroundTask(.appRefresh(SyncService.backgroundTaskIdentifier)) {
-            await syncService.performFullSync()
+            await syncService.performSync()
             await syncService.scheduleBackgroundRefresh()
         }
     }
@@ -137,11 +142,11 @@ struct ExhibitAApp: App {
                     router.navigate(to: destination)
                 }
             }
-            await syncService.performFullSync()
+            await syncService.performSync()
         }
 
         appDelegate.onForegroundNotification = { [syncService] in
-            Task { await syncService.performFullSync() }
+            Task { await syncService.performSync() }
         }
 
         appDelegate.flushBufferedToken()
@@ -151,7 +156,15 @@ struct ExhibitAApp: App {
         let cached = await cache.loadAll()
         appState.updateCachedContent(cached)
 
-        await syncService.performFullSync()
+        if cached.isEmpty {
+            appState.lastSyncAt = nil
+        }
+
+        if appState.lastSyncAt == nil {
+            await syncService.performFullSync()
+        } else {
+            await syncService.performSync()
+        }
         syncService.scheduleBackgroundRefresh()
 
         await uploadQueue.processQueue()

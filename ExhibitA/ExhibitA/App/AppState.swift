@@ -37,6 +37,10 @@ import Foundation
         didSet { persistSignedSignatures() }
     }
 
+    /// Monotonic counter incremented when a signature PNG lands on disk.
+    /// Views observe this to trigger per-image re-renders.
+    private(set) var signatureImageVersion: Int = 0
+
     // MARK: - Initialization
 
     private let defaults: UserDefaults
@@ -126,6 +130,10 @@ import Foundation
 
     func markSigned(contentId: String, signer: String, at date: Date) {
         signedSignatures[signatureKey(contentId: contentId, signer: signer)] = date
+    }
+
+    func signalSignatureImageAvailable() {
+        signatureImageVersion += 1
     }
 
     private func signatureKey(contentId: String, signer: String) -> String {

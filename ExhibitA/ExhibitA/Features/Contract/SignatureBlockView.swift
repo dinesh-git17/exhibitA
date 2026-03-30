@@ -196,8 +196,7 @@ struct SignatureBlockView: View {
         let stateKey = Self.signers.map {
             appState.isSigned(contentId: contentId, signer: $0.id) ? "1" : "0"
         }.joined()
-        let syncKey = Int(appState.lastSyncAt?.timeIntervalSince1970 ?? 0)
-        return "\(stateKey)_\(syncKey)"
+        return "\(stateKey)_\(appState.signatureImageVersion)"
     }
 
     private func loadCachedImages() async {

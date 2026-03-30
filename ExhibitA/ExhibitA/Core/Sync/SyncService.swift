@@ -12,6 +12,7 @@ final class SyncService {
     private let cache: ContentCache
     private let appState: AppState
     private let logger = Logger(subsystem: "dev.dineshd.exhibita", category: "sync")
+    private var isSyncing = false
 
     init(client: ExhibitAClient, cache: ContentCache, appState: AppState) {
         self.client = client
@@ -22,6 +23,9 @@ final class SyncService {
     // MARK: - Sync
 
     func performFullSync() async {
+        let start = ContinuousClock.now
+        logger.info("Full sync started")
+
         let allContent: [ContentItem]
         do {
             allContent = try await client.fetchContent()
@@ -31,7 +35,6 @@ final class SyncService {
             return
         }
 
-        await cache.removeAll()
         do {
             if !allContent.isEmpty {
                 try await cache.save(allContent)
@@ -41,13 +44,25 @@ final class SyncService {
         }
 
         appState.updateCachedContent(allContent)
+        appState.lastSyncAt = .now
+
         await hydrateSignatures(content: allContent)
         await hydrateComments(content: allContent)
         await hydrateFilings()
-        appState.lastSyncAt = .now
+
+        let elapsed = ContinuousClock.now - start
+        logger.info("Full sync complete: \(allContent.count) items in \(elapsed)")
     }
 
     func performSync() async {
+        guard !isSyncing else {
+            logger.debug("Sync already in progress, skipping")
+            return
+        }
+        isSyncing = true
+        defer { isSyncing = false }
+
+        let start = ContinuousClock.now
         let since = appState.lastSyncAt
 
         let changes: [SyncEntry]
@@ -59,11 +74,13 @@ final class SyncService {
         }
 
         if changes.isEmpty {
+            appState.lastSyncAt = .now
             let allContent = await cache.loadAll()
             appState.updateCachedContent(allContent)
             await hydrateSignatures(content: allContent)
             await hydrateFilings()
-            appState.lastSyncAt = .now
+            let elapsed = ContinuousClock.now - start
+            logger.debug("Delta sync (no changes) in \(elapsed)")
             return
         }
 
@@ -103,15 +120,14 @@ final class SyncService {
 
         let allContent = await cache.loadAll()
         appState.updateCachedContent(allContent)
+        appState.lastSyncAt = .now
 
         await hydrateSignatures(content: allContent)
         await hydrateComments(content: allContent)
-
         await hydrateFilings()
 
-        appState.lastSyncAt = .now
-
-        logger.debug("Sync complete: \(fetched.count) updated, \(idsToDelete.count) deleted")
+        let elapsed = ContinuousClock.now - start
+        logger.debug("Delta sync: \(fetched.count) updated, \(idsToDelete.count) deleted in \(elapsed)")
     }
 
     private func fetchIndividually(ids: Set<String>) async -> [ContentItem] {
@@ -168,17 +184,22 @@ final class SyncService {
         var downloads: [(contentId: String, record: SignatureRecord)] = []
         for (contentId, records) in allRecords {
             for record in records {
-                let cached = await signatureCache.load(
+                let onDisk = await signatureCache.exists(
                     contentId: contentId,
                     signer: record.signer
                 )
-                if cached == nil {
+                if !onDisk {
                     downloads.append((contentId, record))
                 }
             }
         }
 
-        guard !downloads.isEmpty else { return }
+        guard !downloads.isEmpty else {
+            logger.debug("Signature hydration: all PNGs on disk, 0 downloads")
+            return
+        }
+
+        let start = ContinuousClock.now
         logger.debug("Downloading \(downloads.count) missing signature PNGs")
 
         await withTaskGroup(of: Void.self) { group in
@@ -199,6 +220,9 @@ final class SyncService {
                             contentId: download.contentId,
                             signer: download.record.signer
                         )
+                        await MainActor.run {
+                            self.appState.signalSignatureImageAvailable()
+                        }
                         self.logger.debug("Downloaded signature: \(download.contentId)_\(download.record.signer)")
                     } catch {
                         self.logger.error(
@@ -208,6 +232,9 @@ final class SyncService {
                 }
             }
         }
+
+        let elapsed = ContinuousClock.now - start
+        logger.debug("Signature hydration: \(downloads.count) downloaded in \(elapsed)")
     }
 
     // MARK: - Filing Hydration
