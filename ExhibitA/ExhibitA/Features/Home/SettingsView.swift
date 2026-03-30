@@ -2,6 +2,7 @@ import SwiftUI
 import UserNotifications
 
 struct SettingsView: View {
+    @Environment(AppState.self) private var appState
     @Environment(SoundService.self) private var soundService: SoundService?
     var onRefresh: (() async -> Void)?
     var onForceSync: (() async -> Void)?
@@ -9,6 +10,7 @@ struct SettingsView: View {
     @State private var notificationStatus: UNAuthorizationStatus = .authorized
     @State private var isRefreshing = false
     @State private var isForceSyncing = false
+    @State private var didMarkAllRead = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,6 +32,10 @@ struct SettingsView: View {
 
                 sectionDivider
             }
+
+            markAllReadSection
+
+            sectionDivider
 
             refreshSection
 
@@ -148,6 +154,55 @@ struct SettingsView: View {
         .accessibilityLabel("Sound Effects")
         .accessibilityValue(service.isSoundEnabled ? "On" : "Off")
         .accessibilityHint("Toggle sound effects for page turns, signatures, and notifications")
+    }
+
+    // MARK: - Mark All Read
+
+    private var markAllReadSection: some View {
+        Button {
+            guard !didMarkAllRead else { return }
+            appState.markAllContentSeen()
+            didMarkAllRead = true
+        } label: {
+            HStack(spacing: Theme.Spacing.sm) {
+                Image(systemName: didMarkAllRead ? "checkmark.circle.fill" : "eye")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(
+                        didMarkAllRead
+                            ? Theme.Colors.Accent.warm
+                            : Theme.Colors.Accent.primary
+                    )
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    Text("Mark All as Read")
+                        .font(Theme.Typography.sectionMarker)
+                        .foregroundStyle(Theme.Colors.Text.primary)
+
+                    Text(
+                        didMarkAllRead
+                            ? "All content marked as read"
+                            : "Dismiss all unread badges"
+                    )
+                    .font(Theme.Typography.metadata)
+                    .foregroundStyle(Theme.Colors.Text.muted)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.vertical, Theme.Spacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(didMarkAllRead)
+        .accessibilityLabel("Mark All as Read")
+        .accessibilityHint(
+            didMarkAllRead
+                ? "All content already marked as read"
+                : "Marks all letters, thoughts, and contract articles as read"
+        )
     }
 
     // MARK: - Refresh
@@ -280,6 +335,7 @@ struct SettingsView: View {
     NavigationStack {
         SettingsView()
     }
+    .environment(AppState())
     .environment(SoundService())
 }
 
@@ -287,6 +343,7 @@ struct SettingsView: View {
     NavigationStack {
         SettingsView()
     }
+    .environment(AppState())
     .environment(SoundService())
     .preferredColorScheme(.dark)
 }
@@ -295,4 +352,5 @@ struct SettingsView: View {
     NavigationStack {
         SettingsView()
     }
+    .environment(AppState())
 }
