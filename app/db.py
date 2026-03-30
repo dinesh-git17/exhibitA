@@ -105,3 +105,13 @@ async def connect(db_path: Path) -> aiosqlite.Connection:
     await connection.executescript(_INDEX_SQL)
     await connection.commit()
     return connection
+
+
+async def checkpoint(connection: aiosqlite.Connection) -> None:
+    """Run a passive WAL checkpoint to compact the write-ahead log.
+
+    Passive checkpoints transfer WAL pages back to the main database
+    without requiring an exclusive lock, preventing unbounded WAL growth
+    when Litestream holds a read lock for replication.
+    """
+    await connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
