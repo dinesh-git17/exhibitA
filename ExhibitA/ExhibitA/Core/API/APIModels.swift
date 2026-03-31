@@ -144,6 +144,75 @@ nonisolated struct RulingCreateRequest: Encodable, Sendable {
     let ruledBy: String
 }
 
+// MARK: - Push Payload Factories
+
+extension ContentItem {
+    static let payloadDateFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    static func parseDate(_ value: String?) -> Date? {
+        guard let str = value else { return nil }
+        return payloadDateFormatter.date(from: str)
+            ?? ISO8601DateFormatter().date(from: str)
+    }
+
+    static func from(pushPayload dict: [String: String]) -> ContentItem? {
+        guard let id = dict["id"],
+              let typeRaw = dict["type"],
+              let type = ContentType(rawValue: typeRaw),
+              let body = dict["body"]
+        else { return nil }
+
+        let createdAt = parseDate(dict["created_at"]) ?? .now
+        let sectionOrder = dict["section_order"].flatMap(Int.init) ?? 0
+        let requiresSignature = dict["requires_signature"] == "true"
+
+        return ContentItem(
+            id: id,
+            type: type,
+            title: dict["title"],
+            subtitle: dict["subtitle"],
+            body: body,
+            articleNumber: nil,
+            classification: nil,
+            sectionOrder: sectionOrder,
+            requiresSignature: requiresSignature,
+            createdAt: createdAt,
+            updatedAt: createdAt
+        )
+    }
+}
+
+extension Filing {
+    static func from(pushPayload dict: [String: String]) -> Filing? {
+        guard let id = dict["id"],
+              let typeRaw = dict["filing_type"],
+              let filingType = FilingType(rawValue: typeRaw),
+              let title = dict["title"],
+              let body = dict["body"]
+        else { return nil }
+
+        let createdAt = ContentItem.parseDate(dict["created_at"]) ?? .now
+
+        return Filing(
+            id: id,
+            filingType: filingType,
+            filedBy: dict["filed_by"] ?? "",
+            title: title,
+            body: body,
+            ruling: nil,
+            rulingReason: nil,
+            ruledBy: nil,
+            ruledAt: nil,
+            createdAt: createdAt,
+            updatedAt: createdAt
+        )
+    }
+}
+
 // MARK: - Error Envelope
 
 nonisolated struct APIErrorEnvelope: Decodable, Sendable {
