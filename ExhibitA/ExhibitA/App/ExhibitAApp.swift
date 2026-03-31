@@ -88,7 +88,7 @@ struct ExhibitAApp: App {
                 }
                 if phase == .active {
                     Task {
-                        await syncService.performSync()
+                        await syncService.performSyncIfStale()
                         await uploadQueue.processQueue()
                         await commentUploadQueue.processQueue()
                     }
@@ -174,12 +174,9 @@ struct ExhibitAApp: App {
                 }
             }
 
-            await syncService.performSync()
         }
 
-        appDelegate.onForegroundNotification = { [syncService] in
-            Task { await syncService.performSync() }
-        }
+        appDelegate.onForegroundNotification = {}
 
         appDelegate.flushBufferedToken()
 
@@ -194,7 +191,7 @@ struct ExhibitAApp: App {
 
         appDelegate.flushBufferedRoute()
 
-        await syncService.performSync()
+        await syncService.performSyncIfStale()
         syncService.scheduleBackgroundRefresh()
 
         await uploadQueue.processQueue()

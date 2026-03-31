@@ -7,6 +7,7 @@ final class SyncService {
     static let backgroundTaskIdentifier = "com.exhibita.app.refresh"
 
     private static let refreshInterval: TimeInterval = 15 * 60
+    private static let stalenessThreshold: TimeInterval = 5 * 60
 
     private let client: ExhibitAClient
     private let cache: ContentCache
@@ -21,6 +22,15 @@ final class SyncService {
     }
 
     // MARK: - Sync
+
+    func performSyncIfStale() async {
+        if let lastSync = appState.lastSyncAt,
+           Date.now.timeIntervalSince(lastSync) < Self.stalenessThreshold {
+            logger.debug("Sync skipped, last sync \(lastSync) within staleness window")
+            return
+        }
+        await performSync()
+    }
 
     func performFullSync() async {
         let start = ContinuousClock.now
