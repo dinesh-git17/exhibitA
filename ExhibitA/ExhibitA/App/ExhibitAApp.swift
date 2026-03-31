@@ -114,10 +114,30 @@ struct ExhibitAApp: App {
             }
         }
 
-        appDelegate.onNotificationRoute = { [client, appState, router, syncService, cache] route in
+        appDelegate.onNotificationRoute = { [client, appState, router, syncService, cache] payload in
+            let route = payload.route
+            guard !route.isEmpty else { return }
             let segments = route.split(separator: "/", maxSplits: 1)
             let kind = segments.first.map(String.init)
             let entityId = segments.count > 1 ? String(segments[1]) : nil
+
+            if let kind, let entityId {
+                switch kind {
+                case "filing":
+                    if let dict = payload.filingDict,
+                       let filing = Filing.from(pushPayload: dict) {
+                        await MainActor.run { appState.cacheFiling(filing) }
+                    }
+                case "letter", "thought":
+                    if let dict = payload.contentDict,
+                       let item = ContentItem.from(pushPayload: dict) {
+                        await MainActor.run { appState.cacheContentItem(item) }
+                        try? await cache.save(item)
+                    }
+                default:
+                    break
+                }
+            }
 
             if let destination = Router.Route.from(pushRoute: route) {
                 await MainActor.run {
@@ -227,12 +247,54 @@ struct ExhibitAApp: App {
 
 // MARK: - App Delegate
 
+struct NotificationPayload: Sendable {
+    let route: String
+    let contentDict: [String: String]?
+    let filingDict: [String: String]?
+
+    init(userInfo: [AnyHashable: Any]) {
+        route = userInfo["route"] as? String ?? ""
+
+        if let raw = userInfo["content"] as? [String: Any] {
+            var flat: [String: String] = [:]
+            for (key, value) in raw {
+                if let boolVal = value as? Bool {
+                    flat[key] = boolVal ? "true" : "false"
+                } else if let intVal = value as? Int {
+                    flat[key] = String(intVal)
+                } else if let strVal = value as? String {
+                    flat[key] = strVal
+                }
+            }
+            contentDict = flat
+        } else {
+            contentDict = nil
+        }
+
+        if let raw = userInfo["filing"] as? [String: Any] {
+            var flat: [String: String] = [:]
+            for (key, value) in raw {
+                if let boolVal = value as? Bool {
+                    flat[key] = boolVal ? "true" : "false"
+                } else if let intVal = value as? Int {
+                    flat[key] = String(intVal)
+                } else if let strVal = value as? String {
+                    flat[key] = strVal
+                }
+            }
+            filingDict = flat
+        } else {
+            filingDict = nil
+        }
+    }
+}
+
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var onDeviceToken: ((Data) -> Void)?
-    var onNotificationRoute: ((String) async -> Void)?
+    var onNotificationRoute: ((NotificationPayload) async -> Void)?
     var onForegroundNotification: (() -> Void)?
     private var bufferedToken: Data?
-    private var bufferedRoute: String?
+    private var bufferedPayload: NotificationPayload?
 
     func application(
         _ application: UIApplication,
@@ -274,18 +336,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceive response: UNNotificationResponse
     ) async {
         let userInfo = response.notification.request.content.userInfo
-        guard let route = userInfo["route"] as? String else { return }
+        guard userInfo["route"] is String else { return }
+        let payload = NotificationPayload(userInfo: userInfo)
         if let handler = onNotificationRoute {
-            await handler(route)
+            await handler(payload)
         } else {
-            bufferedRoute = route
+            bufferedPayload = payload
         }
     }
 
     func flushBufferedRoute() {
-        guard let route = bufferedRoute, let handler = onNotificationRoute else { return }
-        Task { await handler(route) }
-        bufferedRoute = nil
+        guard let payload = bufferedPayload, let handler = onNotificationRoute else { return }
+        Task { await handler(payload) }
+        bufferedPayload = nil
     }
 
     func userNotificationCenter(

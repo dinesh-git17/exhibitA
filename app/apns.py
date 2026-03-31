@@ -87,6 +87,47 @@ async def _prune_token(db: Any, token: str) -> None:
     _log.info("apns_token_pruned", token_prefix=token[:8])
 
 
+_CONTENT_BODY_TRUNCATION_LIMIT = 500
+
+
+def _build_content_payload(
+    content_type: str,
+    content_id: str,
+    *,
+    title: str | None = None,
+    subtitle: str | None = None,
+    body_text: str | None = None,
+    section_order: int | None = None,
+    requires_signature: bool = False,
+    created_at: str | None = None,
+) -> dict[str, Any]:
+    """Build the enriched content object for the APNS payload."""
+    obj: dict[str, Any] = {
+        "id": content_id,
+        "type": content_type,
+    }
+    if title is not None:
+        obj["title"] = title
+    if subtitle is not None:
+        obj["subtitle"] = subtitle
+    if body_text is not None:
+        truncated = (
+            content_type == ContentType.CONTRACT
+            and len(body_text) > _CONTENT_BODY_TRUNCATION_LIMIT
+        )
+        obj["body"] = (
+            body_text[:_CONTENT_BODY_TRUNCATION_LIMIT] if truncated else body_text
+        )
+        if truncated:
+            obj["body_truncated"] = True
+    if section_order is not None:
+        obj["section_order"] = section_order
+    obj["requires_signature"] = requires_signature
+    if created_at is not None:
+        obj["created_at"] = created_at
+    return obj
+
+
 async def send_push(
     settings: Settings,
     db: Any,
@@ -95,6 +136,12 @@ async def send_push(
     content_id: str | None = None,
     article_number: str | None = None,
     classification: str | None = None,
+    title: str | None = None,
+    subtitle: str | None = None,
+    body_text: str | None = None,
+    section_order: int | None = None,
+    requires_signature: bool = False,
+    created_at: str | None = None,
 ) -> list[str]:
     """Send APNS push to all registered device tokens.
 
@@ -134,6 +181,18 @@ async def send_push(
         }
         if route:
             message["route"] = route
+
+        if content_id and body_text is not None:
+            message["content"] = _build_content_payload(
+                content_type,
+                content_id,
+                title=title,
+                subtitle=subtitle,
+                body_text=body_text,
+                section_order=section_order,
+                requires_signature=requires_signature,
+                created_at=created_at,
+            )
 
         request = NotificationRequest(
             device_token=token,
@@ -272,6 +331,10 @@ async def send_filing_push(
     filing_type: str,
     filing_id: str,
     filing_signer: str,
+    filing_title: str | None = None,
+    filing_body: str | None = None,
+    filed_by: str | None = None,
+    created_at: str | None = None,
 ) -> list[str]:
     """Send APNS push to the OTHER signer when a filing is created."""
     client = _build_client(settings)
@@ -294,7 +357,31 @@ async def send_filing_push(
     body = f"A {label} has been filed requiring your attention."
     route = f"filing/{filing_id}"
 
-    return await _send_to_tokens(client, db, tokens, title, body, route, "filing")
+    extra: dict[str, Any] = {}
+    if filing_title is not None:
+        filing_obj: dict[str, Any] = {
+            "id": filing_id,
+            "filing_type": filing_type,
+            "title": filing_title,
+        }
+        if filing_body is not None:
+            truncated = len(filing_body) > _CONTENT_BODY_TRUNCATION_LIMIT
+            filing_obj["body"] = (
+                filing_body[:_CONTENT_BODY_TRUNCATION_LIMIT]
+                if truncated
+                else filing_body
+            )
+            if truncated:
+                filing_obj["body_truncated"] = True
+        if filed_by is not None:
+            filing_obj["filed_by"] = filed_by
+        if created_at is not None:
+            filing_obj["created_at"] = created_at
+        extra["filing"] = filing_obj
+
+    return await _send_to_tokens(
+        client, db, tokens, title, body, route, "filing", extra_payload=extra
+    )
 
 
 async def send_ruling_push(
@@ -339,6 +426,8 @@ async def _send_to_tokens(
     body: str,
     route: str,
     log_prefix: str,
+    *,
+    extra_payload: dict[str, Any] | None = None,
 ) -> list[str]:
     """Deliver a push notification to a list of device tokens."""
     warnings: list[str] = []
@@ -350,6 +439,8 @@ async def _send_to_tokens(
             },
             "route": route,
         }
+        if extra_payload:
+            message.update(extra_payload)
         request = NotificationRequest(
             device_token=token,
             message=message,

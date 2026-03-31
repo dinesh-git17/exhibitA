@@ -96,6 +96,10 @@ async def create_filing(
         filing_type=payload.filing_type,
         filing_id=filing_id,
         filing_signer=payload.filed_by,
+        filing_title=payload.title,
+        filing_body=payload.body,
+        filed_by=payload.filed_by,
+        created_at=row["created_at"] if row else None,
     )
     if push_warnings:
         _log.warning("filing_push_warnings", warnings=push_warnings)

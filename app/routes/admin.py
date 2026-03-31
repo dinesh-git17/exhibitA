@@ -441,6 +441,12 @@ async def content_create(
     await db.commit()
     _log.info("content_created", content_id=content_id, content_type=content_type)
 
+    cursor = await db.execute(
+        "SELECT created_at FROM content WHERE id = ?", (content_id,)
+    )
+    content_row = await cursor.fetchone()
+    content_created_at: str | None = content_row["created_at"] if content_row else None
+
     apns_warnings = await send_push(
         settings,
         db,
@@ -448,6 +454,12 @@ async def content_create(
         content_id=content_id,
         article_number=article_number or None,
         classification=classification or None,
+        title=title or None,
+        subtitle=subtitle or None,
+        body_text=body,
+        section_order=section_order,
+        requires_signature=requires_signature,
+        created_at=content_created_at,
     )
 
     if apns_warnings:
