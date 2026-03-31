@@ -16,6 +16,10 @@ struct LetterDetailView: View {
 
             if let letter {
                 readerContent(letter)
+            } else if appState.failedEntityIDs.contains(id) {
+                entityErrorView
+            } else {
+                letterSkeleton
             }
         }
         .paperNoise()
@@ -23,6 +27,7 @@ struct LetterDetailView: View {
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { markAsRead() }
+        .task { await startSkeletonTimeout() }
     }
 
     // MARK: - Reader Content
@@ -126,12 +131,19 @@ struct LetterDetailView: View {
     @ViewBuilder
     private func responseSection(_ letter: ContentItem) -> some View {
         let responses = appState.commentsForContent(letter.id)
+        let commentsLoaded = appState.areCommentsLoaded(for: letter.id)
         let hasMyComment = appState.comment(
             forContentId: letter.id,
             signer: Config.signerIdentity
         ) != nil
 
-        if !responses.isEmpty || !hasMyComment {
+        if !commentsLoaded {
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                goldSeparator
+                SkeletonBlock(height: 14)
+                SkeletonBlock(width: 180, height: 14)
+            }
+        } else if !responses.isEmpty || !hasMyComment {
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                 goldSeparator
 
@@ -189,7 +201,77 @@ struct LetterDetailView: View {
         "Filed with love, \(letter.createdAt.formatted(.dateTime.month(.wide).day().year()))"
     }
 
+    // MARK: - Skeleton
+
+    private var letterSkeleton: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                SkeletonBlock(width: 100, height: 12)
+                SkeletonBlock(height: 20)
+                    .padding(.top, Theme.Spacing.sm)
+                SkeletonBlock(width: 180, height: 20)
+                    .padding(.top, Theme.Spacing.xs)
+                SkeletonBlock(width: 140, height: 12)
+                    .padding(.top, Theme.Spacing.sm)
+
+                Rectangle()
+                    .fill(Theme.Colors.Border.separator)
+                    .frame(height: Theme.Dividers.hairline)
+                    .padding(.top, Theme.Spacing.md)
+
+                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                    SkeletonBlock(height: 14)
+                    SkeletonBlock(height: 14)
+                    SkeletonBlock(width: 260, height: 14)
+                    SkeletonBlock(height: 14)
+                        .padding(.top, Theme.Spacing.sm)
+                    SkeletonBlock(height: 14)
+                    SkeletonBlock(width: 200, height: 14)
+                }
+                .padding(.top, Theme.Spacing.lg)
+
+                SkeletonBlock(width: 180, height: 12)
+                    .padding(.top, Theme.Spacing.xxl)
+            }
+            .padding(.horizontal, Theme.Spacing.readingHorizontal)
+            .padding(.top, Theme.Spacing.xl)
+        }
+    }
+
+    // MARK: - Error State
+
+    private var entityErrorView: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 32))
+                .foregroundStyle(Theme.Colors.Text.muted)
+
+            Text("This letter could not be retrieved.")
+                .font(Theme.Typography.metadata)
+                .foregroundStyle(Theme.Colors.Text.secondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                appState.clearEntityFetchFailure(id)
+            } label: {
+                Text("Try Again")
+                    .font(Theme.Typography.label)
+                    .foregroundStyle(Theme.Colors.Accent.warm)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     // MARK: - State
+
+    private static let skeletonTimeoutSeconds = 10
+
+    private func startSkeletonTimeout() async {
+        try? await Task.sleep(for: .seconds(Self.skeletonTimeoutSeconds))
+        if letter == nil && !appState.failedEntityIDs.contains(id) {
+            appState.markEntityFetchFailed(id)
+        }
+    }
 
     private func markAsRead() {
         guard !appState.hasBeenSeen(id) else { return }

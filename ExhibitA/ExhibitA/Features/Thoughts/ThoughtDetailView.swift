@@ -16,6 +16,10 @@ struct ThoughtDetailView: View {
 
             if let thought {
                 readerContent(thought)
+            } else if appState.failedEntityIDs.contains(id) {
+                entityErrorView
+            } else {
+                thoughtSkeleton
             }
         }
         .paperNoise()
@@ -23,6 +27,7 @@ struct ThoughtDetailView: View {
         .toolbarBackground(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { markAsRead() }
+        .task { await startSkeletonTimeout() }
     }
 
     // MARK: - Reader Content
@@ -65,12 +70,25 @@ struct ThoughtDetailView: View {
     @ViewBuilder
     private func responseSection(_ thought: ContentItem) -> some View {
         let responses = appState.commentsForContent(thought.id)
+        let commentsLoaded = appState.areCommentsLoaded(for: thought.id)
         let hasMyComment = appState.comment(
             forContentId: thought.id,
             signer: Config.signerIdentity
         ) != nil
 
-        if !responses.isEmpty || !hasMyComment {
+        if !commentsLoaded {
+            VStack(spacing: Theme.Spacing.md) {
+                Rectangle()
+                    .fill(Theme.Colors.Accent.gold.opacity(0.3))
+                    .frame(height: Theme.Dividers.hairline)
+                    .accessibilityHidden(true)
+
+                SkeletonBlock(width: 200, height: 14)
+                    .frame(maxWidth: .infinity)
+                SkeletonBlock(width: 140, height: 14)
+                    .frame(maxWidth: .infinity)
+            }
+        } else if !responses.isEmpty || !hasMyComment {
             VStack(spacing: Theme.Spacing.md) {
                 Rectangle()
                     .fill(Theme.Colors.Accent.gold.opacity(0.3))
@@ -103,7 +121,62 @@ struct ThoughtDetailView: View {
         )
     }
 
+    // MARK: - Skeleton
+
+    private var thoughtSkeleton: some View {
+        VStack(spacing: 0) {
+            SkeletonBlock(width: 160, height: 12)
+                .frame(maxWidth: .infinity)
+
+            VStack(spacing: Theme.Spacing.sm) {
+                SkeletonBlock(width: 240, height: 14)
+                    .frame(maxWidth: .infinity)
+                SkeletonBlock(width: 200, height: 14)
+                    .frame(maxWidth: .infinity)
+                SkeletonBlock(width: 260, height: 14)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.top, Theme.Spacing.lg)
+        }
+        .padding(.horizontal, Theme.Spacing.xl)
+        .padding(.vertical, Theme.Spacing.xxl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    // MARK: - Error State
+
+    private var entityErrorView: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 32))
+                .foregroundStyle(Theme.Colors.Text.muted)
+
+            Text("This thought could not be retrieved.")
+                .font(Theme.Typography.metadata)
+                .foregroundStyle(Theme.Colors.Text.secondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                appState.clearEntityFetchFailure(id)
+            } label: {
+                Text("Try Again")
+                    .font(Theme.Typography.label)
+                    .foregroundStyle(Theme.Colors.Accent.warm)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     // MARK: - State
+
+    private static let skeletonTimeoutSeconds = 10
+
+    private func startSkeletonTimeout() async {
+        try? await Task.sleep(for: .seconds(Self.skeletonTimeoutSeconds))
+        if thought == nil && !appState.failedEntityIDs.contains(id) {
+            appState.markEntityFetchFailed(id)
+        }
+    }
 
     private func markAsRead() {
         guard !appState.hasBeenSeen(id) else { return }
