@@ -30,6 +30,10 @@ struct FilingDetailView: View {
 
             if let filing {
                 readerContent(filing)
+            } else if appState.failedEntityIDs.contains(id) {
+                entityErrorView
+            } else {
+                filingSkeleton
             }
         }
         .paperNoise()
@@ -39,6 +43,7 @@ struct FilingDetailView: View {
         .onAppear {
             if let filing { appState.markSeen(filing.id) }
         }
+        .task { await startSkeletonTimeout() }
     }
 
     private func readerContent(_ filing: Filing) -> some View {
@@ -257,6 +262,70 @@ struct FilingDetailView: View {
         let name = filing.filedBy == Config.signerIdentity ? "You" : filing.filedBy.capitalized
         let date = filing.createdAt.formatted(.dateTime.month(.wide).day().year())
         return "Filed by \(name) \u{2014} \(date)"
+    }
+
+    // MARK: - Skeleton
+
+    private var filingSkeleton: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                SkeletonBlock(width: 80, height: 12)
+                SkeletonBlock(height: 20)
+                    .padding(.top, Theme.Spacing.sm)
+                SkeletonBlock(width: 160, height: 12)
+                    .padding(.top, Theme.Spacing.sm)
+                    .padding(.bottom, Theme.Spacing.lg)
+
+                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                    SkeletonBlock(height: 14)
+                    SkeletonBlock(height: 14)
+                    SkeletonBlock(width: 240, height: 14)
+                    SkeletonBlock(height: 14)
+                        .padding(.top, Theme.Spacing.sm)
+                    SkeletonBlock(width: 200, height: 14)
+                }
+                .padding(.bottom, Theme.Spacing.xl)
+
+                Rectangle()
+                    .fill(Theme.Colors.Accent.gold.opacity(0.3))
+                    .frame(height: Theme.Dividers.hairline)
+            }
+            .padding(.horizontal, Theme.Spacing.readingHorizontal)
+            .padding(.vertical, Theme.Spacing.xl)
+        }
+    }
+
+    // MARK: - Error State
+
+    private var entityErrorView: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 32))
+                .foregroundStyle(Theme.Colors.Text.muted)
+
+            Text("This filing could not be retrieved.")
+                .font(Theme.Typography.metadata)
+                .foregroundStyle(Theme.Colors.Text.secondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                appState.clearEntityFetchFailure(id)
+            } label: {
+                Text("Try Again")
+                    .font(Theme.Typography.label)
+                    .foregroundStyle(Theme.Colors.Accent.warm)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private static let skeletonTimeoutSeconds = 10
+
+    private func startSkeletonTimeout() async {
+        try? await Task.sleep(for: .seconds(Self.skeletonTimeoutSeconds))
+        if filing == nil && !appState.failedEntityIDs.contains(id) {
+            appState.markEntityFetchFailed(id)
+        }
     }
 
     private func submitRuling() {

@@ -114,27 +114,10 @@ struct ExhibitAApp: App {
             }
         }
 
-        appDelegate.onNotificationRoute = { [client, appState, router, syncService] route in
+        appDelegate.onNotificationRoute = { [client, appState, router, syncService, cache] route in
             let segments = route.split(separator: "/", maxSplits: 1)
             let kind = segments.first.map(String.init)
             let entityId = segments.count > 1 ? String(segments[1]) : nil
-
-            if let kind, let entityId {
-                switch kind {
-                case "filing":
-                    if let filing = try? await client.fetchFiling(id: entityId) {
-                        await MainActor.run { appState.cacheFiling(filing) }
-                    }
-                case "letter", "thought":
-                    if let comments = try? await client.fetchComments(contentId: entityId) {
-                        await MainActor.run {
-                            for comment in comments { appState.cacheComment(comment) }
-                        }
-                    }
-                default:
-                    break
-                }
-            }
 
             if let destination = Router.Route.from(pushRoute: route) {
                 await MainActor.run {
@@ -142,6 +125,35 @@ struct ExhibitAApp: App {
                     router.navigate(to: destination)
                 }
             }
+
+            if let kind, let entityId {
+                switch kind {
+                case "filing":
+                    do {
+                        let filing = try await client.fetchFiling(id: entityId)
+                        await MainActor.run { appState.cacheFiling(filing) }
+                    } catch {
+                        await MainActor.run { appState.markEntityFetchFailed(entityId) }
+                    }
+                case "letter", "thought":
+                    do {
+                        let item = try await client.fetchContentItem(id: entityId)
+                        await MainActor.run { appState.cacheContentItem(item) }
+                        try? await cache.save(item)
+                    } catch {
+                        await MainActor.run { appState.markEntityFetchFailed(entityId) }
+                    }
+                    if let comments = try? await client.fetchComments(contentId: entityId) {
+                        await MainActor.run {
+                            for comment in comments { appState.cacheComment(comment) }
+                        }
+                    }
+                    await MainActor.run { appState.setCommentsLoaded(for: entityId) }
+                default:
+                    break
+                }
+            }
+
             await syncService.performSync()
         }
 
@@ -160,11 +172,9 @@ struct ExhibitAApp: App {
             appState.lastSyncAt = nil
         }
 
-        if appState.lastSyncAt == nil {
-            await syncService.performFullSync()
-        } else {
-            await syncService.performSync()
-        }
+        appDelegate.flushBufferedRoute()
+
+        await syncService.performSync()
         syncService.scheduleBackgroundRefresh()
 
         await uploadQueue.processQueue()
@@ -222,6 +232,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     var onNotificationRoute: ((String) async -> Void)?
     var onForegroundNotification: (() -> Void)?
     private var bufferedToken: Data?
+    private var bufferedRoute: String?
 
     func application(
         _ application: UIApplication,
@@ -264,7 +275,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) async {
         let userInfo = response.notification.request.content.userInfo
         guard let route = userInfo["route"] as? String else { return }
-        await onNotificationRoute?(route)
+        if let handler = onNotificationRoute {
+            await handler(route)
+        } else {
+            bufferedRoute = route
+        }
+    }
+
+    func flushBufferedRoute() {
+        guard let route = bufferedRoute, let handler = onNotificationRoute else { return }
+        Task { await handler(route) }
+        bufferedRoute = nil
     }
 
     func userNotificationCenter(

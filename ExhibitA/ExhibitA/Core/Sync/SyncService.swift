@@ -254,16 +254,18 @@ final class SyncService {
         let commentable = content.filter { $0.type == .letter || $0.type == .thought }
         guard !commentable.isEmpty else { return }
 
-        await withTaskGroup(of: [CommentRecord].self) { group in
+        await withTaskGroup(of: (String, [CommentRecord]).self) { group in
             for item in commentable {
                 group.addTask {
-                    (try? await self.client.fetchComments(contentId: item.id)) ?? []
+                    let records = (try? await self.client.fetchComments(contentId: item.id)) ?? []
+                    return (item.id, records)
                 }
             }
-            for await records in group {
+            for await (contentId, records) in group {
                 for record in records {
                     appState.cacheComment(record)
                 }
+                appState.setCommentsLoaded(for: contentId)
             }
         }
     }

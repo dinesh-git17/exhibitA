@@ -13,6 +13,16 @@ import Foundation
 
     private(set) var cachedContent: [ContentItem] = []
 
+    // MARK: - Comment Loading Tracking
+
+    private(set) var commentsLoadedContentIDs: Set<String> = [] {
+        didSet { persistCommentsLoadedIDs() }
+    }
+
+    // MARK: - Entity Fetch Failures (transient, not persisted)
+
+    private(set) var failedEntityIDs: Set<String> = []
+
     // MARK: - Unread Tracking
 
     private(set) var seenContentIDs: Set<String> = [] {
@@ -52,6 +62,7 @@ import Foundation
         signedSignatures = Self.loadSignedSignatures(from: defaults)
         cachedComments = Self.loadComments(from: defaults)
         cachedFilings = Self.loadFilings(from: defaults)
+        commentsLoadedContentIDs = Self.loadCommentsLoadedIDs(from: defaults)
     }
 
     // MARK: - Unread API
@@ -80,6 +91,14 @@ import Foundation
         cachedContent = items
     }
 
+    func cacheContentItem(_ item: ContentItem) {
+        if let index = cachedContent.firstIndex(where: { $0.id == item.id }) {
+            cachedContent[index] = item
+        } else {
+            cachedContent.insert(item, at: 0)
+        }
+    }
+
     // MARK: - Comment API
 
     func commentsForContent(_ contentId: String) -> [CommentRecord] {
@@ -98,6 +117,26 @@ import Foundation
 
     private func commentKey(contentId: String, signer: String) -> String {
         "\(contentId)_\(signer)"
+    }
+
+    // MARK: - Comment Loading Tracking API
+
+    func areCommentsLoaded(for contentId: String) -> Bool {
+        commentsLoadedContentIDs.contains(contentId)
+    }
+
+    func setCommentsLoaded(for contentId: String) {
+        commentsLoadedContentIDs.insert(contentId)
+    }
+
+    // MARK: - Entity Fetch Failure API
+
+    func markEntityFetchFailed(_ id: String) {
+        failedEntityIDs.insert(id)
+    }
+
+    func clearEntityFetchFailure(_ id: String) {
+        failedEntityIDs.remove(id)
     }
 
     // MARK: - Filing API
@@ -209,6 +248,20 @@ import Foundation
         }
         return decoded
     }
+
+    private func persistCommentsLoadedIDs() {
+        guard let data = try? JSONEncoder().encode(commentsLoadedContentIDs) else { return }
+        defaults.set(data, forKey: StorageKey.commentsLoadedContentIDs)
+    }
+
+    private static func loadCommentsLoadedIDs(from defaults: UserDefaults) -> Set<String> {
+        guard let data = defaults.data(forKey: StorageKey.commentsLoadedContentIDs),
+              let decoded = try? JSONDecoder().decode(Set<String>.self, from: data)
+        else {
+            return []
+        }
+        return decoded
+    }
 }
 
 private enum StorageKey {
@@ -217,4 +270,5 @@ private enum StorageKey {
     static let signedSignatures = "exhibit_a_signed_signatures"
     static let cachedComments = "exhibit_a_cached_comments"
     static let cachedFilings = "exhibit_a_cached_filings"
+    static let commentsLoadedContentIDs = "exhibit_a_comments_loaded_ids"
 }
