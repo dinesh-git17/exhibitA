@@ -99,7 +99,7 @@ async def connect(db_path: Path) -> aiosqlite.Connection:
     connection = await aiosqlite.connect(str(db_path))
     connection.row_factory = sqlite3.Row
     await connection.execute("PRAGMA journal_mode=WAL")
-    await connection.execute("PRAGMA busy_timeout=5000")
+    await connection.execute("PRAGMA busy_timeout=15000")
     await connection.execute("PRAGMA foreign_keys=ON")
     await connection.executescript(_SCHEMA_SQL)
     await connection.executescript(_INDEX_SQL)
