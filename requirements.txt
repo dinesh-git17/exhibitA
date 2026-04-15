@@ -22,7 +22,7 @@ aioapns==4.0
 jinja2==3.1.6
 
 # File Uploads (Signature PNGs)
-python-multipart==0.0.22
+python-multipart==0.0.26
 
 # Security
 bcrypt==5.0.0
